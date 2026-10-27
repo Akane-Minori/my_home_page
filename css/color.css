@@ -1,0 +1,22 @@
+:root
+{
+    --white:#FFFFFF;
+
+    --brown:#563631;
+        --brown_pale:#d9b8a8;
+
+    --blue:#00cfff;
+    --blue_pale:#acefff;
+
+    --pink:#ff21ac;
+    --pink_pale:#ffa7f3;
+
+    --red:#ff294b;
+    --red_pale:#ffa7b5;
+
+    --green:#0eff00;
+    --green_pale:#adffa7;
+
+    --orange:#ffb200;
+    --orange_pale:#ffe3a4;
+}

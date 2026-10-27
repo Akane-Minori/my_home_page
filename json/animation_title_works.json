@@ -1,0 +1,353 @@
+{
+ "title_logo": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "monoColor": "#ffb200",
+  "tracks": {
+   "ox": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "easeInCubic"
+    },
+    {
+     "t": 0.5,
+     "v": -300,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1,
+     "v": -600
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 0
+    }
+   ],
+   "mono": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.4,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "title_buttons": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "blindCount": 8,
+  "blindAngle": 45,
+  "monoColor": "#ffb200",
+  "tracks": {
+   "ox": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "easeInCubic"
+    },
+    {
+     "t": 0.5,
+     "v": -300,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1,
+     "v": -600
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 0
+    }
+   ],
+   "blind": [
+    {
+     "t": 0,
+     "v": 1
+    },
+    {
+     "t": 0.3,
+     "v": 1,
+     "ease": "easeInOutCubic"
+    },
+    {
+     "t": 0.5,
+     "v": 0
+    }
+   ],
+   "mono": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.4,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "works_illust": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "monoColor": "#ffb200",
+  "tracks": {
+   "ox": [
+    {
+     "t": 0,
+     "v": 600,
+     "ease": "easeInCubic"
+    },
+    {
+     "t": 0.5,
+     "v": 300,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1,
+     "v": 0
+    }
+   ],
+   "oy": [
+    {
+     "t": 0.6,
+     "v": 200,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.9,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 1
+    }
+   ],
+   "mono": [
+    {
+     "t": 0.5,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.6,
+     "v": 0
+    }
+   ]
+  }
+ },
+ "works_game": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "monoColor": "#ffb200",
+  "tracks": {
+   "ox": [
+    {
+     "t": 0,
+     "v": 600,
+     "ease": "easeInCubic"
+    },
+    {
+     "t": 0.5,
+     "v": 300,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1,
+     "v": 0
+    }
+   ],
+   "oy": [
+    {
+     "t": 0.7,
+     "v": -200,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.9,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.6,
+     "v": 1
+    }
+   ],
+   "mono": [
+    {
+     "t": 0.6,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.7,
+     "v": 0
+    }
+   ]
+  }
+ },
+ "works_music": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "monoColor": "#ffb200",
+  "tracks": {
+   "ox": [
+    {
+     "t": 0,
+     "v": 600,
+     "ease": "easeInCubic"
+    },
+    {
+     "t": 0.5,
+     "v": 300,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 1,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.7,
+     "v": 1
+    }
+   ],
+   "mono": [
+    {
+     "t": 0.7,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.8,
+     "v": 0
+    }
+   ]
+  }
+ },
+ "works_back": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "monoColor": "#ffb200",
+  "tracks": {
+   "ox": [
+    {
+     "t": 0,
+     "v": 600,
+     "ease": "easeInCubic"
+    },
+    {
+     "t": 0.5,
+     "v": 300,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 1,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 1
+    }
+   ],
+   "mono": [
+    {
+     "t": 0.5,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.6,
+     "v": 0
+    }
+   ]
+  }
+ },
+ "title_bg": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "alpha": [
+    {
+     "t": 0,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 0
+    }
+   ]
+  }
+ },
+ "works_bg": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 1
+    }
+   ]
+  }
+ }
+}

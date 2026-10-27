@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>安部葉月の城</title>
+
+        <!-- cssのインクルード -->
+        <link rel="stylesheet" href="./css/mobile/main.css" media="(max-width: 767px)">
+        <link rel="stylesheet" href="./css/pc/main.css" media="(min-width: 768px)">
+
+    </head>
+    <body>
+
+
+        <!-- 背景 -->
+        <div id="background">
+            <canvas id="noise"></canvas>
+        </div>
+        <div id="cinemascope_top"></div>
+        <div id="cinemascope_bottom"></div>
+        
+
+        <!---------------------------------------------------------------------
+         タイトル
+         --------------------------------------------------------------------->
+        <div class="scene" id="title">
+            
+            <canvas id="bgframe"></canvas>
+            <img id="title_cloud" src="./img/cloud.webp" alt="">
+
+            <div class="titlebutton_area">
+                <button class="titlebutton" id="button_hello" data-scene="hello">
+                    <canvas class="titlebutton_canvas"></canvas>
+                </button>
+                <button class="titlebutton" id="button_works" data-scene="works">
+                    <canvas class="titlebutton_canvas"></canvas>
+                </button>
+                <button class="titlebutton" id="button_diary" data-scene="diary">
+                    <canvas class="titlebutton_canvas"></canvas>
+                </button>
+                <svg width="0" height="0">
+                    <filter id="flash_orange">
+                        <feFlood flood-color="#ffb200" result="c"/>
+                        <feComposite in="c" in2="SourceAlpha" operator="in"/>
+                    </filter>
+                </svg>
+            </div>
+            
+            <canvas id="logo"></canvas>
+        </div>
+        
+        <!---------------------------------------------------------------------
+         自己紹介
+         --------------------------------------------------------------------->
+        <div class="scene" id="hello">
+
+            <canvas id="hello_bg"></canvas>
+            <button id="hello_backbutton" data-scene="title">
+                <canvas class="hello_backbutton_canvas"></canvas>
+            </button>
+        
+            <div id="hello_paper">
+                <canvas id="hello_paper_canvas"></canvas>
+                <div id="hello_content">
+                    <div id="hello_name">
+                        安部葉月
+                        <button id="twitter"></button>
+                        <button id="discord"></button>
+                        <button id="pixiv"></button>
+                    </div>
+                    <br>
+                    <div>
+                        <h1>ゲームとか映像とかをいろいろつくっています</h1>
+                        <h1>よろしくおねがいします！</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!---------------------------------------------------------------------
+         作品
+         --------------------------------------------------------------------->
+        <div class="scene" id="works">
+            
+            <canvas id="bggrid"></canvas>
+            作品目次です<br>
+            <button id="works_back" data-scene="title">戻る</button>
+            <button id="works_game" data-scene="games">ゲーム</button>
+            <button id="works_illust" data-scene="illusts">イラスト</button>
+            <button id="works_music" data-scene="musics">音楽</button>
+        </div>
+         
+        <!---------------------------------------------------------------------
+         ゲーム
+         --------------------------------------------------------------------->
+        <div class="scene" id="games">
+            ゲーム一覧です<br>
+            <button data-scene="works">戻る</button>
+        </div>
+        
+        <!---------------------------------------------------------------------
+         イラスト
+         --------------------------------------------------------------------->
+        <div class="scene" id="illusts">
+            イラスト一覧です<br>
+            <button data-scene="works">戻る</button>
+        </div>
+        
+        <!---------------------------------------------------------------------
+         音楽
+         --------------------------------------------------------------------->
+        <div class="scene" id="musics">
+            音楽です<br>
+            <button data-scene="works">戻る</button>
+        </div>
+
+
+        <!---------------------------------------------------------------------
+         日記
+         --------------------------------------------------------------------->
+        <div class="scene" id="diary">
+            日記です<br>
+            <button data-scene="title">戻る</button>
+        </div>
+
+
+        <!-- javascriptの読み込み -->
+        <script type="module" src="./js/main.js"></script>
+        <script type="module" src="./js/scenes/title.js"></script>
+        <script type="module" src="./js/scenechange.js"></script>
+        <script type="module" src="./js/webgpu/webgpu_noiseobject.js"></script>
+        <script type="module" src="./js/webgpu/webgpu_bgframe.js"></script>
+        <script type="module" src="./js/webgpu/webgpu_logo.js"></script>
+        <script type="module" src="./js/webgpu/webgpu_button.js"></script>
+        <script type="module" src="./js/webgpu/webgpu_hello.js"></script>
+    </body>
+</html>

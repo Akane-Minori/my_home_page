@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>アニメーションエディター2</title>
+<style>
+:root{--bg:#fff;--fg:#222;--mut:#888;--line:#d8d8d8;--pan:#f3f3f3;--acc:#e0338f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1c1e;--fg:#eee;--mut:#999;--line:#3a3a3c;--pan:#2a2a2c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1c1e;--fg:#eee;--mut:#999;--line:#3a3a3c;--pan:#2a2a2c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0 auto;max-width:900px;padding:12px;background:var(--bg);color:var(--fg);font:13px/1.6 system-ui,"Hiragino Sans","Yu Gothic",sans-serif}
+section{background:var(--pan);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:10px}
+input,select,button,textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:3px 6px}
+input[type=number]{width:70px}button{cursor:pointer}
+#mcw{position:relative;display:inline-block}
+#mcp{position:absolute;top:30px;left:0;z-index:5;background:var(--pan);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 4px 14px #0004}
+#mcc{width:160px;height:160px;max-width:none;border-radius:0;background:none;touch-action:none;cursor:crosshair}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+canvas{display:block;width:100%;max-width:840px;border-radius:6px;background:repeating-conic-gradient(#8883 0 25%,#0000 0 50%) 0 0/16px 16px}
+#sc{flex:1;min-width:120px;padding:0}
+.row{display:flex;align-items:center;gap:6px;margin:3px 0}.row b{width:58px;font-weight:500;color:var(--mut)}
+.lane{position:relative;flex:1;height:24px;margin:0 8px;background:var(--bg);border:1px solid var(--line);border-radius:4px}
+.head{position:absolute;top:0;bottom:0;width:1px;background:var(--acc);pointer-events:none}
+.key{position:absolute;top:5px;width:12px;height:12px;margin-left:-6px;background:var(--mut);transform:rotate(45deg);border-radius:2px;cursor:ew-resize;touch-action:none}
+.key.on{background:var(--acc)}
+textarea{width:100%;height:240px;box-sizing:border-box;font:12px/1.4 ui-monospace,monospace}
+small{color:var(--mut)}
+</style>
+</head>
+<body>
+<section><div class="bar">
+ クリップ <select id="cs"></select> 名前 <input id="nm" size="10">
+ <button id="bn">新規</button><button id="bd">複製</button><button id="bx">削除</button>
+</div><div class="bar" style="margin-top:6px">
+ 長さ(秒) <input id="du" type="number" step="0.1" min="0.05"> コマ落ちfps(0=なめらか) <input id="fp" type="number" step="1" min="0"> <label><input id="lp" type="checkbox"> ループ</label>
+</div><div class="bar" style="margin-top:6px">
+ ブラインド 枚数 <input id="bc" type="number" step="1" min="1"> 角度 <input id="ba" type="number" step="5"> <small>(0=横縞 90=縦縞 45=斜め)</small>
+ 単色化 色 <span id="mcw"><button id="mcb" type="button" style="width:40px;height:24px"></button><div id="mcp" hidden><canvas id="mcc" width="160" height="160"></canvas><br><input id="mch" size="9" spellcheck="false"></div></span>
+</div><div class="bar" style="margin-top:6px">
+ ランダム移動(±の幅) 更新fps <input id="jf" type="number" step="1" min="0"> ox <input id="jx" type="number" step="0.5"> oy <input id="jy" type="number" step="0.5"> rotAnim <input id="jr" type="number" step="0.1"> scale <input id="js" type="number" step="0.01">
+</div></section>
+
+<section>
+ <canvas id="cv" width="840" height="360"></canvas>
+ <div class="bar" style="margin-top:6px"><button id="pl">⏯</button><input id="sc" type="range" min="0" max="1" step="0.001" value="0"><span id="tl">0.00</span><label>画像 <input id="im" type="file" accept="image/*"></label> <label>表示倍率 <input id="zm" type="number" step="0.05" min="0.05" value="0.25"></label></div>
+</section>
+
+<section><div id="lanes"></div><div id="kp" style="margin-top:6px"></div></section>
+
+<section>
+ <div class="bar" style="margin-bottom:6px"><b>JSON</b><button id="cp">コピー</button><button id="ld">この内容を読み込む</button><small id="ms"></small></div>
+ <textarea id="jt" spellcheck="false"></textarea>
+</section>
+
+<script>
+const $=id=>document.getElementById(id);
+// blind: 1=全部見える 0=全部隠れる / mono: 0=元の色 1=単色
+const PROPS=['ox','oy','scale','rotAnim','alpha','blind','mono'],DEF={ox:0,oy:0,scale:1,rotAnim:0,alpha:1,blind:1,mono:0};
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x)),rd=x=>Math.round(x*1000)/1000;
+const EASE={linear:k=>k,step:k=>k<1?0:1,easeInCubic:k=>k**3,easeOutCubic:k=>1-(1-k)**3,
+ easeInOutCubic:k=>k<.5?4*k**3:1-(-2*k+2)**3/2,
+ easeInBack:k=>2.70158*k**3-1.70158*k*k,
+ easeOutBack:k=>1+2.70158*(k-1)**3+1.70158*(k-1)**2,
+ easeOutBounce:k=>{const n=7.5625,d=2.75;if(k<1/d)return n*k*k;if(k<2/d)return n*(k-=1.5/d)*k+.75;if(k<2.5/d)return n*(k-=2.25/d)*k+.9375;return n*(k-=2.625/d)*k+.984375}};
+
+// クリップの足りない設定を補う
+const fill=c=>{c.blindCount=Math.max(1,+c.blindCount||8);c.blindAngle=c.blindAngle!=null&&c.blindAngle!==''&&isFinite(+c.blindAngle)?+c.blindAngle:({h:0,v:90})[c.blindDir]??45;delete c.blindDir;c.monoColor=c.monoColor||'#ffb200';c.tracks??={};c.jitter??={};return c};
+let data={clips:{
+ intro:{duration:.7,loop:false,fps:0,tracks:{scale:[{t:0,v:0,ease:'easeOutBack'},{t:.7,v:1}],alpha:[{t:0,v:0},{t:.15,v:1}]}},
+ idle:{duration:1,loop:true,fps:8,jitter:{fps:8,ox:2,oy:2,rotAnim:0.5},tracks:{oy:[{t:0,v:0,ease:'easeInOutCubic'},{t:.5,v:-6,ease:'easeInOutCubic'},{t:1,v:0}],rotAnim:[{t:0,v:-1},{t:.5,v:1},{t:1,v:-1}]}},
+ flash:{duration:.6,loop:false,fps:12,blindCount:8,blindAngle:45,monoColor:'#ffb200',tracks:{blind:[{t:0,v:0,ease:'easeOutCubic'},{t:.5,v:1}],mono:[{t:0,v:1},{t:.3,v:1},{t:.6,v:0}]}}}};
+Object.values(data.clips).forEach(fill);
+let cur='intro',sel=null,t=0,playing=true,img=null,last=performance.now();
+const C=()=>data.clips[cur];
+
+// 値の計算(キーは時刻順に並べ替えてから使う)
+function ev(keys,tm,def){
+ if(!keys||!keys.length)return def;
+ const k=[...keys].sort((a,b)=>a.t-b.t);
+ if(tm<=k[0].t)return k[0].v;
+ const L=k[k.length-1];if(tm>=L.t)return L.v;
+ let i=0;while(k[i+1].t<=tm)i++;
+ const a=k[i],b=k[i+1];
+ return a.v+(b.v-a.v)*EASE[a.ease||'linear']((tm-a.t)/(b.t-a.t));
+}
+
+// ---- 画面の組み立て ----
+const JM={jf:'fps',jx:'ox',jy:'oy',jr:'rotAnim',js:'scale'};
+function refresh(){
+ const c=C();
+ $('cs').innerHTML=Object.keys(data.clips).map(n=>`<option${n===cur?' selected':''}>${n}</option>`).join('');
+ $('nm').value=cur;$('du').value=c.duration;$('fp').value=c.fps;$('lp').checked=c.loop;
+ $('bc').value=c.blindCount;$('ba').value=c.blindAngle;setPicker(c.monoColor);
+ for(const [id,p] of Object.entries(JM))$(id).value=(c.jitter||{})[p]||0;
+ $('sc').max=c.duration;
+ lanes();panel();json();
+}
+function lanes(){
+ const c=C(),box=$('lanes');box.innerHTML='';
+ for(const p of PROPS){
+  const row=document.createElement('div');row.className='row';row.innerHTML=`<b>${p}</b>`;
+  const lane=document.createElement('div');lane.className='lane';
+  const head=document.createElement('div');head.className='head';lane.append(head);
+  const at=e=>{const r=lane.getBoundingClientRect();return Math.round(clamp((e.clientX-r.left)/r.width,0,1)*c.duration*100)/100};
+  (c.tracks[p]||[]).forEach(k=>{
+   const m=document.createElement('div');m.className='key'+(sel&&sel.k===k?' on':'');
+   m.style.left=k.t/c.duration*100+'%';
+   m.onpointerdown=e=>{
+    e.stopPropagation();sel={p,k};m.setPointerCapture(e.pointerId);
+    document.querySelectorAll('.key.on').forEach(x=>x.classList.remove('on'));m.classList.add('on');panel();
+    m.onpointermove=ev2=>{k.t=at(ev2);m.style.left=k.t/c.duration*100+'%';panel();json()};
+    m.onpointerup=()=>{m.onpointermove=m.onpointerup=null;c.tracks[p].sort((a,b)=>a.t-b.t);refresh()};
+   };
+   lane.append(m);
+  });
+  lane.onpointerdown=e=>{if(e.target===lane){playing=false;t=at(e)}};   // クリックで時刻へ移動
+  lane.ondblclick=e=>{                                                  // ダブルクリックでキー追加
+   const tt=at(e),arr=c.tracks[p]??=[],k={t:tt,v:rd(ev(arr,tt,DEF[p])),ease:'linear'};
+   arr.push(k);arr.sort((a,b)=>a.t-b.t);sel={p,k};refresh();
+  };
+  row.append(lane);box.append(row);
+ }
+}
+function panel(){
+ const el=$('kp');
+ if(!sel){el.innerHTML='<small>ひし形をクリックで選択・ドラッグで時刻移動 / レーンをダブルクリックでキー追加 / レーンをクリックで時刻移動</small>';return}
+ const {p,k}=sel,step=(p==='blind'||p==='mono')?0.05:(p==='scale'||p==='alpha'?0.05:1);
+ el.innerHTML=`<b>${p}</b> 時刻 <input id="kt" type="number" step="0.01" value="${k.t}"> 値 <input id="kv" type="number" step="${step}" value="${k.v}"> 次のキーまでの曲線 <select id="ke">${Object.keys(EASE).map(n=>`<option${n===(k.ease||'linear')?' selected':''}>${n}</option>`).join('')}</select> <button id="kd">削除</button>`;
+ $('kt').onchange=e=>{k.t=Math.max(0,+e.target.value||0);C().tracks[p].sort((a,b)=>a.t-b.t);refresh()};
+ $('kv').onchange=e=>{k.v=+e.target.value||0;json()};
+ $('ke').onchange=e=>{k.ease=e.target.value;json()};
+ $('kd').onclick=delKey;
+}
+function delKey(){if(!sel)return;const a=C().tracks[sel.p];a.splice(a.indexOf(sel.k),1);sel=null;refresh()}
+addEventListener('keydown',e=>{if(e.key==='Delete'&&!/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))delKey()});
+
+// ---- JSON ----
+function out(){
+ const o={};
+ for(const [n,c] of Object.entries(data.clips)){
+  const tr={},used=p=>c.tracks[p]&&c.tracks[p].length;
+  for(const p of PROPS)if(used(p))
+   tr[p]=[...c.tracks[p]].sort((a,b)=>a.t-b.t).map(k=>k.ease&&k.ease!=='linear'?{t:k.t,v:k.v,ease:k.ease}:{t:k.t,v:k.v});
+  o[n]={duration:c.duration,loop:c.loop,fps:c.fps};
+  if(used('blind')){o[n].blindCount=c.blindCount;o[n].blindAngle=c.blindAngle}   // ブラインドを使うときだけ出力
+  if(used('mono'))o[n].monoColor=c.monoColor;                                  // 単色化を使うときだけ出力
+  o[n].tracks=tr;
+  const j=c.jitter||{},JP=['ox','oy','rotAnim','scale'];
+  if(JP.some(p=>j[p]))o[n].jitter={fps:j.fps||0,...Object.fromEntries(JP.filter(p=>j[p]).map(p=>[p,j[p]]))};
+ }
+ return o;
+}
+function json(){$('jt').value=JSON.stringify(out(),null,1).replace(/\n\s+(\{"t")/g,' $1')}
+$('ld').onclick=()=>{
+ try{
+  const o=JSON.parse($('jt').value),cl={};
+  for(const [n,c] of Object.entries(o))cl[n]=fill({duration:+c.duration||1,loop:!!c.loop,fps:+c.fps||0,blindCount:c.blindCount,blindAngle:c.blindAngle,blindDir:c.blindDir,monoColor:c.monoColor,jitter:c.jitter||{},tracks:Object.fromEntries(Object.entries(c.tracks||{}).map(([p,a])=>[p,a.map(k=>({t:+k.t,v:+k.v,ease:k.ease||'linear'}))]))});
+  if(!Object.keys(cl).length)throw 0;
+  data.clips=cl;cur=Object.keys(cl)[0];sel=null;t=0;refresh();$('ms').textContent='読み込みました';
+ }catch(e){$('ms').textContent='JSONを読み込めませんでした'}
+};
+$('cp').onclick=async()=>{
+ try{await navigator.clipboard.writeText($('jt').value);$('ms').textContent='コピーしました'}
+ catch(e){$('jt').select();$('ms').textContent='選択しました。Ctrl+C でコピーしてください'}
+};
+
+// ---- クリップの操作 ----
+$('cs').onchange=e=>{cur=e.target.value;sel=null;t=0;playing=true;refresh()};
+$('nm').onchange=e=>{
+ const n=e.target.value.trim();if(!n||data.clips[n]){e.target.value=cur;return}
+ data.clips=Object.fromEntries(Object.entries(data.clips).map(([k,v])=>[k===cur?n:k,v]));cur=n;refresh();
+};
+const uniq=b=>{let i=1;while(data.clips[b+i])i++;return b+i};
+$('bn').onclick=()=>{const n=uniq('clip');data.clips[n]=fill({duration:1,loop:false,fps:0});cur=n;sel=null;t=0;refresh()};
+$('bd').onclick=()=>{const n=uniq(cur+'_');data.clips[n]=structuredClone(C());cur=n;sel=null;refresh()};
+$('bx').onclick=()=>{if(Object.keys(data.clips).length<2)return;delete data.clips[cur];cur=Object.keys(data.clips)[0];sel=null;t=0;refresh()};
+$('du').onchange=e=>{C().duration=Math.max(.05,+e.target.value||1);refresh()};
+$('fp').onchange=e=>{C().fps=Math.max(0,+e.target.value||0);json()};
+$('lp').onchange=e=>{C().loop=e.target.checked;json()};
+$('bc').onchange=e=>{C().blindCount=Math.max(1,Math.round(+e.target.value)||8);e.target.value=C().blindCount;json()};
+$('ba').onchange=e=>{C().blindAngle=+e.target.value||0;e.target.value=C().blindAngle;json()};
+
+// ---- 単色化の色: 色相環と三角形(クリスタ風) ----
+// 三角形は色相に合わせて回る。頂点は 純色 / 白 / 黒
+const pc=$('mcc'),pg=pc.getContext('2d'),N=160,CX=80,R=76,RI=58,RT=54;
+let ph=0,ps=1,pv=1,pm=null;   // 色相・彩度・明度(0〜1)
+function hsv2rgb(h,s,v){const f=n=>{const k=(n+h*6)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};return [f(5),f(3),f(1)].map(x=>Math.round(x*255))}
+function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){if(mx===r)h=((g-b)/d+6)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h/=6}return [h,mx?d/mx:0,mx]}
+const hex=(r,g,b)=>'#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+const tri=()=>[0,4.18879,2.0944].map(a=>[CX+RT*Math.cos(a),CX+RT*Math.sin(a)]);   // [純色(右),白(左上),黒(左下)] 常に右向き
+function weights(p,[A,B,K]){   // 三角形の中での、各頂点の重み
+ const den=(B[1]-K[1])*(A[0]-K[0])+(K[0]-B[0])*(A[1]-K[1]);
+ const a=((B[1]-K[1])*(p[0]-K[0])+(K[0]-B[0])*(p[1]-K[1]))/den;
+ const b=((K[1]-A[1])*(p[0]-K[0])+(A[0]-K[0])*(p[1]-K[1]))/den;
+ return [a,b,1-a-b];
+}
+function paintPicker(){
+ const id=pg.createImageData(N,N),d=id.data,T=tri(),H=hsv2rgb(ph,1,1);
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+  const px=x+.5,py=y+.5,dx=px-CX,dy=py-CX,r=Math.hypot(dx,dy);let c=null;
+  if(r<=R&&r>=RI)c=hsv2rgb(((Math.atan2(dy,dx)/(2*Math.PI))+1)%1,1,1);
+  else{const [a,b,k]=weights([px,py],T);if(a>=0&&b>=0&&k>=0)c=[0,1,2].map(i=>Math.round(H[i]*a+255*b))}
+  if(c){const o=(y*N+x)*4;d[o]=c[0];d[o+1]=c[1];d[o+2]=c[2];d[o+3]=255}
+ }
+ pg.putImageData(id,0,0);
+ const a=ph*2*Math.PI,rm=(R+RI)/2,wa=ps*pv,wb=(1-ps)*pv,wk=1-pv;
+ const mk=(x,y)=>{pg.beginPath();pg.arc(x,y,6,0,7);pg.lineWidth=3;pg.strokeStyle='#fff';pg.stroke();pg.lineWidth=1;pg.strokeStyle='#000';pg.stroke()};
+ mk(CX+rm*Math.cos(a),CX+rm*Math.sin(a));
+ mk(wa*T[0][0]+wb*T[1][0]+wk*T[2][0],wa*T[0][1]+wb*T[1][1]+wk*T[2][1]);
+}
+function pickerApply(){const h=hex(...hsv2rgb(ph,ps,pv));C().monoColor=h;$('mcb').style.background=h;$('mch').value=h;paintPicker();json()}
+function setPicker(h){   // クリップを切り替えたとき・JSONを読み込んだときに呼ぶ
+ const m=/^#?([0-9a-f]{6})$/i.exec(h);if(!m)return;
+ const n=parseInt(m[1],16);[ph,ps,pv]=rgb2hsv(n>>16,n>>8&255,n&255);
+ $('mcb').style.background='#'+m[1];$('mch').value='#'+m[1];paintPicker();
+}
+function pickerMove(e){
+ const r=pc.getBoundingClientRect(),p=[(e.clientX-r.left)*N/r.width,(e.clientY-r.top)*N/r.height];
+ if(pm==='ring')ph=((Math.atan2(p[1]-CX,p[0]-CX)/(2*Math.PI))+1)%1;
+ else{   // 三角形の外に出たら、いちばん近い内側に寄せる
+  let [a,b,k]=weights(p,tri());a=Math.max(0,a);b=Math.max(0,b);k=Math.max(0,k);
+  const s=a+b+k;a/=s;b/=s;pv=a+b;ps=pv>1e-6?a/pv:ps;
+ }
+ pickerApply();
+}
+pc.onpointerdown=e=>{const r=pc.getBoundingClientRect();pm=Math.hypot((e.clientX-r.left)*N/r.width-CX,(e.clientY-r.top)*N/r.height-CX)>=RI?'ring':'tri';pc.setPointerCapture(e.pointerId);pickerMove(e)};
+pc.onpointermove=e=>{if(pm)pickerMove(e)};
+pc.onpointerup=()=>{pm=null};
+$('mch').onchange=e=>{const m=/^#?([0-9a-f]{6})$/i.exec(e.target.value);if(m){C().monoColor='#'+m[1].toLowerCase();setPicker(C().monoColor);json()}};
+$('mcb').onclick=()=>{$('mcp').hidden=!$('mcp').hidden};
+addEventListener('pointerdown',e=>{if(!e.target.closest('#mcw'))$('mcp').hidden=true});
+for(const [id,p] of Object.entries(JM))$(id).onchange=e=>{(C().jitter??={})[p]=+e.target.value||0;json()};
+
+// ---- プレビュー ----
+$('pl').onclick=()=>{const c=C();if(!playing&&t>=c.duration&&!c.loop)t=0;playing=!playing};
+$('sc').oninput=e=>{playing=false;t=+e.target.value};
+$('im').onchange=e=>{
+ const f=e.target.files[0];if(!f)return;
+ const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{img=i};i.src=r.result};r.readAsDataURL(f);
+};
+const cx=$('cv').getContext('2d');
+// 単色化とブラインドは、いったん別のcanvasに絵を描いてから掛ける
+const oc=document.createElement('canvas'),og=oc.getContext('2d');
+// 乱数(コマ番号と項目名から決まるので、スクラブしても同じ結果になる)
+function hash(f,p){let h=Math.imul(f+1,374761393)^Math.imul([...p].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7),668265263);h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
+function draw(){
+ const c=C(),tq=c.fps>0?Math.floor(t*c.fps+1e-6)/c.fps:t,v={};
+ for(const p of PROPS)v[p]=ev(c.tracks[p],tq,DEF[p]);
+ const j=c.jitter||{};   // ランダム移動: j.fps ごとに、±幅の範囲でずらす
+ if(j.fps>0){const f=Math.floor(t*j.fps+1e-6);for(const p of ['ox','oy','rotAnim','scale'])if(j[p])v[p]+=(hash(f,p)*2-1)*j[p]}
+ const BW=688,W=img?BW*(+$('zm').value||.25):BW,H=img?W*img.height/img.width:152,k=BW/860;   // ox/oy は 幅860pxのボタン画像での px
+ const M=12,OW=Math.ceil(W+M*2),OH=Math.ceil(H+M*2);
+ if(oc.width!==OW||oc.height!==OH){oc.width=OW;oc.height=OH}
+ // 1. 絵を描く
+ og.clearRect(0,0,OW,OH);og.save();og.translate(OW/2,OH/2);
+ if(img)og.drawImage(img,-W/2,-H/2,W,H);
+ else{og.fillStyle='#ff7ab8';og.strokeStyle='#563631';og.lineWidth=8;og.beginPath();og.roundRect(-W/2,-H/2,W,H,28);og.fill();og.stroke();
+  og.fillStyle='#fff';og.font='bold 56px system-ui';og.textAlign='center';og.textBaseline='middle';og.fillText('BUTTON',0,4)}
+ og.restore();
+ // 2. 単色化: 描いた部分だけを、指定色に寄せる
+ const mono=clamp(v.mono,0,1);
+ if(mono>0){og.globalCompositeOperation='source-atop';og.globalAlpha=mono;og.fillStyle=c.monoColor;og.fillRect(0,0,OW,OH);og.globalAlpha=1;og.globalCompositeOperation='source-over'}
+ // 3. ブラインド: 各すだれが、blind の割合だけ開く
+ const b=clamp(v.blind,0,1);
+ if(b<1){
+  const n=c.blindCount,a=c.blindAngle*Math.PI/180,D=Math.hypot(OW,OH);
+  const L=Math.abs((W+8)*Math.sin(a))+Math.abs((H+8)*Math.cos(a)),pitch=L/n;   // すだれが並ぶ方向の長さ
+  og.globalCompositeOperation='destination-in';og.fillStyle='#000';
+  og.save();og.translate(OW/2,OH/2);og.rotate(a);og.beginPath();
+  for(let i=0;i<n;i++)og.rect(-D,-L/2+i*pitch,2*D,b*pitch);
+  og.fill();og.restore();og.globalCompositeOperation='source-over';
+ }
+ // 4. 位置・回転・拡大・透明度を掛けて表示
+ cx.clearRect(0,0,840,360);cx.save();
+ cx.translate(420+v.ox*k,180+v.oy*k);cx.rotate(v.rotAnim*Math.PI/180);cx.scale(v.scale,v.scale);cx.globalAlpha=clamp(v.alpha,0,1);
+ cx.drawImage(oc,-OW/2,-OH/2);
+ cx.restore();
+ $('sc').value=t;$('tl').textContent=t.toFixed(2)+' / '+c.duration;$('pl').textContent=playing?'⏸':'▶';
+ const x=clamp(t/c.duration,0,1)*100+'%';document.querySelectorAll('.head').forEach(h=>h.style.left=x);
+}
+function tick(now){
+ requestAnimationFrame(tick);
+ const c=C(),dt=Math.min((now-last)/1000,.1);last=now;
+ if(playing){t+=dt;if(t>=c.duration){if(c.loop)t%=c.duration;else{t=c.duration;playing=false}}}
+ draw();
+}
+refresh();requestAnimationFrame(tick);
+</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>アニメーションエディター</title>
+<style>
+:root{--bg:#fff;--fg:#222;--mut:#888;--line:#d8d8d8;--pan:#f3f3f3;--acc:#e0338f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1c1e;--fg:#eee;--mut:#999;--line:#3a3a3c;--pan:#2a2a2c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1c1e;--fg:#eee;--mut:#999;--line:#3a3a3c;--pan:#2a2a2c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0 auto;max-width:900px;padding:12px;background:var(--bg);color:var(--fg);font:13px/1.6 system-ui,"Hiragino Sans","Yu Gothic",sans-serif}
+section{background:var(--pan);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:10px}
+input,select,button,textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:3px 6px}
+input[type=number]{width:70px}button{cursor:pointer}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+canvas{display:block;width:100%;max-width:840px;border-radius:6px;background:repeating-conic-gradient(#8883 0 25%,#0000 0 50%) 0 0/16px 16px}
+#sc{flex:1;min-width:120px;padding:0}
+.row{display:flex;align-items:center;gap:6px;margin:3px 0}.row b{width:58px;font-weight:500;color:var(--mut)}
+.lane{position:relative;flex:1;height:24px;margin:0 8px;background:var(--bg);border:1px solid var(--line);border-radius:4px}
+.head{position:absolute;top:0;bottom:0;width:1px;background:var(--acc);pointer-events:none}
+.key{position:absolute;top:5px;width:12px;height:12px;margin-left:-6px;background:var(--mut);transform:rotate(45deg);border-radius:2px;cursor:ew-resize;touch-action:none}
+.key.on{background:var(--acc)}
+textarea{width:100%;height:240px;box-sizing:border-box;font:12px/1.4 ui-monospace,monospace}
+small{color:var(--mut)}
+</style>
+</head>
+<body>
+<section><div class="bar">
+ クリップ <select id="cs"></select> 名前 <input id="nm" size="10">
+ <button id="bn">新規</button><button id="bd">複製</button><button id="bx">削除</button>
+</div><div class="bar" style="margin-top:6px">
+ 長さ(秒) <input id="du" type="number" step="0.1" min="0.05"> コマ落ちfps(0=なめらか) <input id="fp" type="number" step="1" min="0"> <label><input id="lp" type="checkbox"> ループ</label>
+</div><div class="bar" style="margin-top:6px">
+ ランダム移動(±の幅) 更新fps <input id="jf" type="number" step="1" min="0"> ox <input id="jx" type="number" step="0.5"> oy <input id="jy" type="number" step="0.5"> rotAnim <input id="jr" type="number" step="0.1"> scale <input id="js" type="number" step="0.01">
+</div></section>
+
+<section>
+ <canvas id="cv" width="840" height="360"></canvas>
+ <div class="bar" style="margin-top:6px"><button id="pl">⏯</button><input id="sc" type="range" min="0" max="1" step="0.001" value="0"><span id="tl">0.00</span><label>画像 <input id="im" type="file" accept="image/*"></label> <label>表示倍率 <input id="zm" type="number" step="0.05" min="0.05" value="0.25"></label></div>
+</section>
+
+<section><div id="lanes"></div><div id="kp" style="margin-top:6px"></div></section>
+
+<section>
+ <div class="bar" style="margin-bottom:6px"><b>JSON</b><button id="cp">コピー</button><button id="ld">この内容を読み込む</button><small id="ms"></small></div>
+ <textarea id="jt" spellcheck="false"></textarea>
+</section>
+
+<script>
+const $=id=>document.getElementById(id);
+const PROPS=['ox','oy','scale','rotAnim','alpha'],DEF={ox:0,oy:0,scale:1,rotAnim:0,alpha:1};
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x)),rd=x=>Math.round(x*1000)/1000;
+const EASE={linear:k=>k,step:k=>k<1?0:1,easeInCubic:k=>k**3,easeOutCubic:k=>1-(1-k)**3,
+ easeInOutCubic:k=>k<.5?4*k**3:1-(-2*k+2)**3/2,
+ easeInBack:k=>2.70158*k**3-1.70158*k*k,
+ easeOutBack:k=>1+2.70158*(k-1)**3+1.70158*(k-1)**2,
+ easeOutBounce:k=>{const n=7.5625,d=2.75;if(k<1/d)return n*k*k;if(k<2/d)return n*(k-=1.5/d)*k+.75;if(k<2.5/d)return n*(k-=2.25/d)*k+.9375;return n*(k-=2.625/d)*k+.984375}};
+
+let data={clips:{
+ intro:{duration:.7,loop:false,fps:0,tracks:{scale:[{t:0,v:0,ease:'easeOutBack'},{t:.7,v:1}],alpha:[{t:0,v:0},{t:.15,v:1}]}},
+ idle:{duration:1,loop:true,fps:8,jitter:{fps:8,ox:2,oy:2,rotAnim:0.5},tracks:{oy:[{t:0,v:0,ease:'easeInOutCubic'},{t:.5,v:-6,ease:'easeInOutCubic'},{t:1,v:0}],rotAnim:[{t:0,v:-1},{t:.5,v:1},{t:1,v:-1}]}}}};
+let cur='intro',sel=null,t=0,playing=true,img=null,last=performance.now();
+const C=()=>data.clips[cur];
+
+// 値の計算(キーは時刻順に並べ替えてから使う)
+function ev(keys,tm,def){
+ if(!keys||!keys.length)return def;
+ const k=[...keys].sort((a,b)=>a.t-b.t);
+ if(tm<=k[0].t)return k[0].v;
+ const L=k[k.length-1];if(tm>=L.t)return L.v;
+ let i=0;while(k[i+1].t<=tm)i++;
+ const a=k[i],b=k[i+1];
+ return a.v+(b.v-a.v)*EASE[a.ease||'linear']((tm-a.t)/(b.t-a.t));
+}
+
+// ---- 画面の組み立て ----
+function refresh(){
+ const c=C();
+ $('cs').innerHTML=Object.keys(data.clips).map(n=>`<option${n===cur?' selected':''}>${n}</option>`).join('');
+ $('nm').value=cur;$('du').value=c.duration;$('fp').value=c.fps;$('lp').checked=c.loop;for(const [id,p] of Object.entries(JM))$(id).value=(c.jitter||{})[p]||0;$('sc').max=c.duration;
+ lanes();panel();json();
+}
+function lanes(){
+ const c=C(),box=$('lanes');box.innerHTML='';
+ for(const p of PROPS){
+  const row=document.createElement('div');row.className='row';row.innerHTML=`<b>${p}</b>`;
+  const lane=document.createElement('div');lane.className='lane';
+  const head=document.createElement('div');head.className='head';lane.append(head);
+  const at=e=>{const r=lane.getBoundingClientRect();return Math.round(clamp((e.clientX-r.left)/r.width,0,1)*c.duration*100)/100};
+  (c.tracks[p]||[]).forEach(k=>{
+   const m=document.createElement('div');m.className='key'+(sel&&sel.k===k?' on':'');
+   m.style.left=k.t/c.duration*100+'%';
+   m.onpointerdown=e=>{
+    e.stopPropagation();sel={p,k};m.setPointerCapture(e.pointerId);
+    document.querySelectorAll('.key.on').forEach(x=>x.classList.remove('on'));m.classList.add('on');panel();
+    m.onpointermove=ev2=>{k.t=at(ev2);m.style.left=k.t/c.duration*100+'%';panel();json()};
+    m.onpointerup=()=>{m.onpointermove=m.onpointerup=null;c.tracks[p].sort((a,b)=>a.t-b.t);refresh()};
+   };
+   lane.append(m);
+  });
+  lane.onpointerdown=e=>{if(e.target===lane){playing=false;t=at(e)}};   // クリックで時刻へ移動
+  lane.ondblclick=e=>{                                                  // ダブルクリックでキー追加
+   const tt=at(e),arr=c.tracks[p]??=[],k={t:tt,v:rd(ev(arr,tt,DEF[p])),ease:'linear'};
+   arr.push(k);arr.sort((a,b)=>a.t-b.t);sel={p,k};refresh();
+  };
+  row.append(lane);box.append(row);
+ }
+}
+function panel(){
+ const el=$('kp');
+ if(!sel){el.innerHTML='<small>ひし形をクリックで選択・ドラッグで時刻移動 / レーンをダブルクリックでキー追加 / レーンをクリックで時刻移動</small>';return}
+ const {p,k}=sel;
+ el.innerHTML=`<b>${p}</b> 時刻 <input id="kt" type="number" step="0.01" value="${k.t}"> 値 <input id="kv" type="number" step="0.05" value="${k.v}"> 次のキーまでの曲線 <select id="ke">${Object.keys(EASE).map(n=>`<option${n===(k.ease||'linear')?' selected':''}>${n}</option>`).join('')}</select> <button id="kd">削除</button>`;
+ $('kt').onchange=e=>{k.t=Math.max(0,+e.target.value||0);C().tracks[p].sort((a,b)=>a.t-b.t);refresh()};
+ $('kv').onchange=e=>{k.v=+e.target.value||0;json()};
+ $('ke').onchange=e=>{k.ease=e.target.value;json()};
+ $('kd').onclick=delKey;
+}
+function delKey(){if(!sel)return;const a=C().tracks[sel.p];a.splice(a.indexOf(sel.k),1);sel=null;refresh()}
+addEventListener('keydown',e=>{if(e.key==='Delete'&&!/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))delKey()});
+
+// ---- JSON ----
+function out(){
+ const o={};
+ for(const [n,c] of Object.entries(data.clips)){
+  const tr={};
+  for(const p of PROPS)if(c.tracks[p]&&c.tracks[p].length)
+   tr[p]=[...c.tracks[p]].sort((a,b)=>a.t-b.t).map(k=>k.ease&&k.ease!=='linear'?{t:k.t,v:k.v,ease:k.ease}:{t:k.t,v:k.v});
+  o[n]={duration:c.duration,loop:c.loop,fps:c.fps,tracks:tr};
+  const j=c.jitter||{},JP=['ox','oy','rotAnim','scale'];
+  if(JP.some(p=>j[p]))o[n].jitter={fps:j.fps||0,...Object.fromEntries(JP.filter(p=>j[p]).map(p=>[p,j[p]]))};
+ }
+ return o;
+}
+function json(){$('jt').value=JSON.stringify(out(),null,1).replace(/\n\s+(\{"t")/g,' $1')}
+$('ld').onclick=()=>{
+ try{
+  const o=JSON.parse($('jt').value),cl={};
+  for(const [n,c] of Object.entries(o))cl[n]={duration:+c.duration||1,loop:!!c.loop,fps:+c.fps||0,jitter:c.jitter||{},tracks:Object.fromEntries(Object.entries(c.tracks||{}).map(([p,a])=>[p,a.map(k=>({t:+k.t,v:+k.v,ease:k.ease||'linear'}))]))};
+  if(!Object.keys(cl).length)throw 0;
+  data.clips=cl;cur=Object.keys(cl)[0];sel=null;t=0;refresh();$('ms').textContent='読み込みました';
+ }catch(e){$('ms').textContent='JSONを読み込めませんでした'}
+};
+$('cp').onclick=async()=>{
+ try{await navigator.clipboard.writeText($('jt').value);$('ms').textContent='コピーしました'}
+ catch(e){$('jt').select();$('ms').textContent='選択しました。Ctrl+C でコピーしてください'}
+};
+
+// ---- クリップの操作 ----
+$('cs').onchange=e=>{cur=e.target.value;sel=null;t=0;playing=true;refresh()};
+$('nm').onchange=e=>{
+ const n=e.target.value.trim();if(!n||data.clips[n]){e.target.value=cur;return}
+ data.clips=Object.fromEntries(Object.entries(data.clips).map(([k,v])=>[k===cur?n:k,v]));cur=n;refresh();
+};
+const uniq=b=>{let i=1;while(data.clips[b+i])i++;return b+i};
+$('bn').onclick=()=>{const n=uniq('clip');data.clips[n]={duration:1,loop:false,fps:0,tracks:{}};cur=n;sel=null;t=0;refresh()};
+$('bd').onclick=()=>{const n=uniq(cur+'_');data.clips[n]=structuredClone(C());cur=n;sel=null;refresh()};
+$('bx').onclick=()=>{if(Object.keys(data.clips).length<2)return;delete data.clips[cur];cur=Object.keys(data.clips)[0];sel=null;t=0;refresh()};
+$('du').onchange=e=>{C().duration=Math.max(.05,+e.target.value||1);refresh()};
+$('fp').onchange=e=>{C().fps=Math.max(0,+e.target.value||0);json()};
+$('lp').onchange=e=>{C().loop=e.target.checked;json()};
+const JM={jf:'fps',jx:'ox',jy:'oy',jr:'rotAnim',js:'scale'};
+for(const [id,p] of Object.entries(JM))$(id).onchange=e=>{(C().jitter??={})[p]=+e.target.value||0;json()};
+
+// ---- プレビュー ----
+$('pl').onclick=()=>{const c=C();if(!playing&&t>=c.duration&&!c.loop)t=0;playing=!playing};
+$('sc').oninput=e=>{playing=false;t=+e.target.value};
+$('im').onchange=e=>{
+ const f=e.target.files[0];if(!f)return;
+ const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{img=i};i.src=r.result};r.readAsDataURL(f);
+};
+const cx=$('cv').getContext('2d');
+// 乱数(コマ番号と項目名から決まるので、スクラブしても同じ結果になる)
+function hash(f,p){let h=Math.imul(f+1,374761393)^Math.imul([...p].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7),668265263);h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
+function draw(){
+ const c=C(),tq=c.fps>0?Math.floor(t*c.fps+1e-6)/c.fps:t,v={};
+ for(const p of PROPS)v[p]=ev(c.tracks[p],tq,DEF[p]);
+ const j=c.jitter||{};   // ランダム移動: j.fps ごとに、±幅の範囲でずらす
+ if(j.fps>0){const f=Math.floor(t*j.fps+1e-6);for(const p of ['ox','oy','rotAnim','scale'])if(j[p])v[p]+=(hash(f,p)*2-1)*j[p]}
+ const BW=688,W=img?BW*(+$('zm').value||.25):BW,H=img?W*img.height/img.width:152,k=BW/860;   // ox/oy は 幅860pxのボタン画像での px
+ cx.clearRect(0,0,840,360);cx.save();
+ cx.translate(420+v.ox*k,180+v.oy*k);cx.rotate(v.rotAnim*Math.PI/180);cx.scale(v.scale,v.scale);cx.globalAlpha=clamp(v.alpha,0,1);
+ if(img)cx.drawImage(img,-W/2,-H/2,W,H);
+ else{cx.fillStyle='#ff7ab8';cx.strokeStyle='#563631';cx.lineWidth=8;cx.beginPath();cx.roundRect(-W/2,-H/2,W,H,28);cx.fill();cx.stroke();
+  cx.fillStyle='#fff';cx.font='bold 56px system-ui';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('BUTTON',0,4)}
+ cx.restore();
+ $('sc').value=t;$('tl').textContent=t.toFixed(2)+' / '+c.duration;$('pl').textContent=playing?'⏸':'▶';
+ const x=clamp(t/c.duration,0,1)*100+'%';document.querySelectorAll('.head').forEach(h=>h.style.left=x);
+}
+function tick(now){
+ requestAnimationFrame(tick);
+ const c=C(),dt=Math.min((now-last)/1000,.1);last=now;
+ if(playing){t+=dt;if(t>=c.duration){if(c.loop)t%=c.duration;else{t=c.duration;playing=false}}}
+ draw();
+}
+refresh();requestAnimationFrame(tick);
+</script>
+</body>
+</html>

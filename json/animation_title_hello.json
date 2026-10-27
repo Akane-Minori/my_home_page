@@ -1,0 +1,257 @@
+{
+ "title_logo": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "monoColor": "#ffb200",
+  "tracks": {
+   "oy": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "easeInCubic"
+    },
+    {
+     "t": 0.5,
+     "v": -600,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1,
+     "v": -1200
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 0
+    }
+   ],
+   "mono": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.4,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "title_buttons": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "blindCount": 8,
+  "blindAngle": 45,
+  "monoColor": "#ffb200",
+  "tracks": {
+   "oy": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "easeInCubic"
+    },
+    {
+     "t": 0.5,
+     "v": -600,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1,
+     "v": -1200
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 0
+    }
+   ],
+   "blind": [
+    {
+     "t": 0,
+     "v": 1,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 0.25,
+     "v": 0
+    }
+   ],
+   "mono": [
+    {
+     "t": 0,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.25,
+     "v": 0
+    }
+   ]
+  }
+ },
+ "hello_coffee": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "monoColor": "#ffb200",
+  "tracks": {
+   "oy": [
+    {
+     "t": 0,
+     "v": 1200,
+     "ease": "easeInCubic"
+    },
+    {
+     "t": 0.5,
+     "v": 600,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1,
+     "v": 0
+    },
+    {
+     "t": 1.5,
+     "v": 0
+    }
+   ],
+   "rotAnim": [
+    {
+     "t": 0.5,
+     "v": 90,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 1
+    }
+   ],
+   "mono": [
+    {
+     "t": 0.5,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.6,
+     "v": 0
+    }
+   ]
+  }
+ },
+ "title_bg": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "alpha": [
+    {
+     "t": 0,
+     "v": 1,
+     "ease": "step"
+    }
+   ]
+  }
+ },
+ "hello_paper": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "monoColor": "#ffb200",
+  "tracks": {
+   "oy": [
+    {
+     "t": 0,
+     "v": 1200,
+     "ease": "easeInCubic"
+    },
+    {
+     "t": 0.5,
+     "v": 600,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1,
+     "v": 0
+    }
+   ],
+   "rotAnim": [
+    {
+     "t": 0.5,
+     "v": -45,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 1
+    }
+   ],
+   "mono": [
+    {
+     "t": 0.5,
+     "v": 1,
+     "ease": "step"
+    },
+    {
+     "t": 0.6,
+     "v": 0
+    }
+   ]
+  }
+ },
+ "hello_bg": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 1
+    }
+   ]
+  }
+ }
+}

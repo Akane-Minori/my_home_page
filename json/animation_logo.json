@@ -1,0 +1,543 @@
+{
+ "ス1.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "ox": [
+    {
+     "t": 0.2,
+     "v": 400,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.5,
+     "v": 0,
+     "ease": "easeInCubic"
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.2,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "ス2.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "oy": [
+    {
+     "t": 0,
+     "v": -400,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.4,
+     "v": 0
+    }
+   ]
+  }
+ },
+ "イ1.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "oy": [
+    {
+     "t": 0.1,
+     "v": -400,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.5,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.1,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "イ2.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "scale": [
+    {
+     "t": 0.1,
+     "v": 0,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.4,
+     "v": 1
+    }
+   ],
+   "rotAnim": [
+    {
+     "t": 0.1,
+     "v": -360,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.4,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.1,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "ー1.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "ox": [
+    {
+     "t": 0.4,
+     "v": 400,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.8,
+     "v": 0
+    }
+   ],
+   "rotAnim": [
+    {
+     "t": 0.4,
+     "v": 45,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.8,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.4,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "ツ1.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "oy": [
+    {
+     "t": 0.3,
+     "v": 400,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.6,
+     "v": 0
+    }
+   ],
+   "rotAnim": [
+    {
+     "t": 0.3,
+     "v": -90,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.6,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.3,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "ギ1.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "scale": [
+    {
+     "t": 0.2,
+     "v": 0,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.5,
+     "v": 1
+    }
+   ],
+   "rotAnim": [
+    {
+     "t": 0.2,
+     "v": 360,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.5,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.2,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "ギ2.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "ox": [
+    {
+     "t": 0.5,
+     "v": -100,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.8,
+     "v": 0
+    }
+   ],
+   "rotAnim": [
+    {
+     "t": 0.5,
+     "v": -90,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.8,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "ギ3.webp": {
+  "duration": 1.5,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "rotAnim": [
+    {
+     "t": 0.1,
+     "v": 720,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 1.5,
+     "v": 0,
+     "ease": "easeOutCubic"
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.1,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "ヤ1.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "oy": [
+    {
+     "t": 0.3,
+     "v": 200,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.6,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.3,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "ヤ2.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "ox": [
+    {
+     "t": 0.4,
+     "v": 400,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.7,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.4,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "ラ1.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "oy": [
+    {
+     "t": 0,
+     "v": 500,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.3,
+     "v": 0
+    }
+   ]
+  }
+ },
+ "ラ2.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "oy": [
+    {
+     "t": 0.4,
+     "v": -400,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.7,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.4,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "リ1.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "ox": [
+    {
+     "t": 0.3,
+     "v": 300,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.6,
+     "v": 0
+    }
+   ],
+   "rotAnim": [
+    {
+     "t": 0.3,
+     "v": 90,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.6,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.3,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "リ2.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "oy": [
+    {
+     "t": 0.5,
+     "v": 100,
+     "ease": "easeOutBack"
+    },
+    {
+     "t": 0.8,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 1,
+     "ease": "step"
+    }
+   ]
+  }
+ },
+ "ー2.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "rotAnim": [
+    {
+     "t": 0.4,
+     "v": 360,
+     "ease": "easeOutCubic"
+    },
+    {
+     "t": 0.9,
+     "v": 0
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.4,
+     "v": 1
+    }
+   ]
+  }
+ },
+ "author.webp": {
+  "duration": 1,
+  "loop": false,
+  "fps": 24,
+  "tracks": {
+   "oy": [
+    {
+     "t": 0.5,
+     "v": -500,
+     "ease": "easeOutBounce"
+    },
+    {
+     "t": 0.9,
+     "v": 0,
+     "ease": "easeOutBounce"
+    }
+   ],
+   "alpha": [
+    {
+     "t": 0,
+     "v": 0,
+     "ease": "step"
+    },
+    {
+     "t": 0.5,
+     "v": 1
+    }
+   ]
+  }
+ }
+}

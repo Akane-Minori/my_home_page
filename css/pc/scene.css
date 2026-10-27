@@ -1,0 +1,244 @@
+/* ----------------------------------------------------------------------------
+タイトル
+---------------------------------------------------------------------------- */
+#bgframe
+{
+    position:fixed;
+
+
+    width:100%;
+    height:100%;
+    z-index:-90;
+}
+
+#title_cloud
+{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    margin:0 auto;
+    height:90vh;
+    width:auto;
+    z-index:-95;
+}
+
+#logo
+{
+    position:fixed;
+
+    top: 3vh;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: min(80vw, 1000px, calc(var(--logo-h) * 1.53));
+
+    max-height: calc(100vh - 3vh - var(--logo-bottom, 0px) - 2vh);  /* ボタンの手前まで */
+    object-fit: contain;
+    height: auto;
+}
+
+.titlebutton_area
+{
+    /* 位置 */
+    position:fixed;
+    bottom:10%;
+    align-items: center;
+    width: 100%;
+
+    /* 配列 */
+    display:flex;
+    flex-direction:row;
+    gap:20px;
+
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 100%;
+}
+
+.titlebutton
+{
+    width: 300px;
+    aspect-ratio: 860 / 190;
+
+    /* ボタンの見た目を切る */
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    filter: opacity(0);
+
+    overflow: visible;
+    position: relative;     /* 中の canvas をこのボタン基準で置くため */
+    --pad: 32;              /* 縁取りの余白(ボタン画像のピクセル単位) */
+    --img-w: 860;           /* ボタン画像の幅 */
+    --img-h: 190;           /* ボタン画像の高さ */
+
+    --stripe: 30px;     /* 帯の周期 */
+    --progress: 1;
+}
+
+.titlebutton_canvas
+{
+    position: absolute;
+    pointer-events: none;   /* クリックやホバーはボタン本体で受ける */
+
+    /* ボタンより、四方に --pad ぶん大きくする */
+    left:   calc(var(--pad) / var(--img-w) * -100%);
+    top:    calc(var(--pad) / var(--img-h) * -100%);
+    width:  calc((var(--img-w) + var(--pad) * 2) / var(--img-w) * 100%);
+    height: calc((var(--img-h) + var(--pad) * 2) / var(--img-h) * 100%);
+
+    
+    mask-image: repeating-linear-gradient(
+        45deg,                                                   /* 斜めの角度 */
+        black 0,
+        black calc(var(--stripe) * var(--progress)),             /* 見える帯 */
+        transparent calc(var(--stripe) * var(--progress)),
+        transparent var(--stripe)                                /* 隠れる帯 */
+    );
+
+}
+
+
+
+/* ----------------------------------------------------------------------------
+自己紹介
+---------------------------------------------------------------------------- */
+#hello_bg
+{
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -90;
+    background-color: var(--orange);
+}
+
+#hello_backbutton
+{
+    position: fixed;
+    top: 12vh;
+    left: calc(50% - 36vh - 220px);
+    width: 240px;
+    aspect-ratio: 353 / 310;
+
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    padding: 0;
+    overflow: visible;
+    
+    --pad: 32;
+    --img-w: 353;
+    --img-h: 310;
+
+    z-index: 10;
+}
+
+.hello_backbutton_canvas
+{
+    position: absolute;
+    pointer-events: none;
+
+    left:   calc(var(--pad) / var(--img-w) * -100%);
+    top:    calc(var(--pad) / var(--img-h) * -100%);
+    width:  calc((var(--img-w) + var(--pad) * 2) / var(--img-w) * 100%);
+    height: calc((var(--img-h) + var(--pad) * 2) / var(--img-h) * 100%);
+}
+
+#hello_paper
+{
+    position: fixed;
+    top: 12vh;
+    left: 50%;
+    height: 100vh;                 /* 画面の高さ分あるので、下が12vhぶんはみ出る */
+    aspect-ratio: 611 / 858;
+    transform: translateX(-50%) rotate(-2deg);
+}
+
+#hello_paper_canvas
+{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#hello_content
+{
+    position: relative;
+    padding: 8% 10%;
+    box-sizing: border-box;
+    font-family: "Zen Old Mincho", serif;
+}
+
+#hello_name
+{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 2.4rem;
+    color: var(--brown);
+}
+
+#hello_name button
+{
+    top: 0;            /* 共通ルールの top: 30px を打ち消す */
+    width: 44px;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: 2px solid var(--brown);
+    background-color: transparent;
+}
+
+#hello_content h1
+{
+    font-size: 1.3rem;
+    margin: 0 0 12px;
+    color: var(--brown);
+}
+
+button:not(.titlebutton):not(#hello_backbutton)
+{
+    position: relative;
+    top: 30px;
+}
+
+
+/* ----------------------------------------------------------------------------
+作品
+---------------------------------------------------------------------------- */
+
+
+
+
+/* ----------------------------------------------------------------------------
+ゲーム
+---------------------------------------------------------------------------- */
+
+
+
+
+/* ----------------------------------------------------------------------------
+絵
+---------------------------------------------------------------------------- */
+
+
+
+/* ----------------------------------------------------------------------------
+音楽
+---------------------------------------------------------------------------- */
+
+
+
+
+/* ----------------------------------------------------------------------------
+日記
+---------------------------------------------------------------------------- */
