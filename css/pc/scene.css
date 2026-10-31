@@ -116,7 +116,7 @@
     width: 100%;
     height: 100%;
     z-index: -90;
-    background-color: var(--orange);
+    background-color: var(--brown_pale);
 }
 
 #hello_backbutton
@@ -205,7 +205,10 @@
     color: var(--brown);
 }
 
-button:not(.titlebutton):not(#hello_backbutton)
+
+
+/* テスト用　戻るボタン下げ */
+button:not(.titlebutton):not(#hello_backbutton):not(.game_item):not(#game_card_close):not(#illust_card_close)
 {
     position: relative;
     top: 30px;
@@ -218,18 +221,236 @@ button:not(.titlebutton):not(#hello_backbutton)
 
 
 
+/* ----------------------------------------------------------------------------
+回転文字(games / illusts / musics 共通)
+---------------------------------------------------------------------------- */
+#spin_text
+{
+    position:fixed;
+    left:50%;
+    top:50%;
+    translate:-50% -50%;
+    width:150vw;
+    height:150vw;
+    overflow:visible;
+
+    z-index:101;
+    pointer-events:none;
+    fill:var(--pink);
+
+    opacity:0;
+    transition:opacity 0.4s;
+    animation:spin_text 40s linear infinite;
+}
+
+#spin_text.is-active
+{
+    opacity:1;
+}
+
+.spin_big
+{
+    font-family:"Anton", sans-serif;
+    font-size:80px;
+}
+
+.spin_small
+{
+    font-family:sans-serif;
+    font-size:6px;
+}
+
+@keyframes spin_text
+{
+    to { rotate:360deg; }
+}
 
 /* ----------------------------------------------------------------------------
 ゲーム
 ---------------------------------------------------------------------------- */
+#games_track
+{
+    --u:100vh;                /* JSON の 1.0 にあたる長さ */
+    position:fixed;
+    inset:0;
+    will-change:transform;
+    pointer-events:none;
+}
 
+.game_item
+{
+    position:absolute;
+    left:calc(var(--x) * var(--u));
+    top:calc(var(--y) * var(--u));
+    height:calc(var(--h) * var(--u));
+    width:calc(var(--h) * var(--u) * var(--aspect));
 
+    pointer-events:auto;
+    appearance:none;
+    padding:0;
+    border:none;
+    background:transparent;
+    cursor:pointer;
+}
+
+.game_item canvas
+{
+    position:absolute;
+    pointer-events:none;
+
+    /* ボタンより、四方に --pad ぶん大きくする */
+    left:   calc(var(--pad) / var(--img-w) * -100%);
+    top:    calc(var(--pad) / var(--img-h) * -100%);
+    width:  calc((var(--img-w) + var(--pad) * 2) / var(--img-w) * 100%);
+    height: calc((var(--img-h) + var(--pad) * 2) / var(--img-h) * 100%);
+}
+
+#game_card
+{
+    position:fixed;
+    inset:0;
+    z-index:50;             /* シネスコ(100)より下 */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(86, 54, 49, 0.6);
+}
+
+#game_card[hidden]
+{
+    display:none;
+}
+
+#game_card_body
+{
+    width:min(560px, 80vw);
+    padding:32px;
+    background:var(--white);
+    color:var(--brown);
+}
 
 
 /* ----------------------------------------------------------------------------
 絵
 ---------------------------------------------------------------------------- */
+#illusts_track
+{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;      /* 操作を通すのは、コマの上だけ */
+    will-change:transform;
+}
 
+#illusts_svg
+{
+    position:absolute;
+    left:50%;
+    top:30px;                 /* シネスコの帯の下から始める */
+    width:min(400px, 100vw);  /* 縦長の質感を保つため、最大 400px */
+    translate:-50% 0;
+    overflow:visible;         /* 縁取りがはみ出しても切らない */
+    pointer-events:none;
+}
+
+.illusts_hit
+{
+    fill:transparent;
+    pointer-events:fill;
+    cursor:pointer;
+}
+
+.illusts_edge
+{
+    display:none;
+    fill:none;
+    stroke-linejoin:round;
+    pointer-events:none;
+}
+
+.illusts_edge.on
+{
+    display:inline;
+}
+
+.edge_brown
+{
+    stroke:var(--brown);
+    stroke-width:8px;
+    vector-effect:non-scaling-stroke;
+}
+
+.edge_white
+{
+    stroke:var(--white);
+    stroke-width:4px;
+    vector-effect:non-scaling-stroke;
+}
+
+/* 絵の詳細表示 */
+#illust_card
+{
+    position:fixed;
+    inset:0;
+    z-index:50;             /* シネスコ(100)より下 */
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    padding:60px 20px;      /* シネスコの帯にかからない余白 */
+    box-sizing:border-box;
+    background:rgba(86, 54, 49, 0.88);
+}
+
+#illust_card[hidden]
+{
+    display:none;
+}
+
+#illust_card_img
+{
+    /* 高さに収まる最大の大きさ。サムネから原寸に替わっても、大きさは変わらない */
+    width:min(100%, calc((100vh - 220px) * var(--ar, 1)));
+    aspect-ratio:var(--ar, 1);
+    height:auto;
+    object-fit:contain;
+}
+
+#illust_card_text
+{
+    width:min(640px, 100%);
+    color:var(--white);
+    text-align:center;
+}
+
+#illust_card_date
+{
+    margin:0 0 6px;
+    font-size:14px;
+    letter-spacing:0.15em;
+    color:var(--brown_pale);
+}
+
+#illust_card_comment
+{
+    margin:0;
+    font-size:16px;
+    line-height:1.7;
+    white-space:pre-wrap;   /* コメントの改行を、そのまま出す */
+}
+
+#illust_card_close
+{
+    position:absolute;
+    top:44px;
+    right:20px;
+    padding:6px 14px;
+    border:none;
+    background:var(--white);
+    color:var(--brown);
+    cursor:pointer;
+}
 
 
 /* ----------------------------------------------------------------------------

@@ -38,7 +38,7 @@ const bgframe_edge =
     },
     end:
     {
-        px: 18,
+        px: 3,
         interval:250,
         amount: 1.0,
     },

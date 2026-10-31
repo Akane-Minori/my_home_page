@@ -10,7 +10,7 @@ const noises =
     // 閾値は大きいほど模様が減る。speed は時間の倍率
     title:
     {
-        render: CreateNoise([1.0, 1.0, 1.0], 0.30),
+        render: CreateNoise([1.0, 1.0, 1.0], 0.25),
         speed: 1.0,
         bg: "var(--blue)"
     },
@@ -70,5 +70,5 @@ export function SetNoiseActive(on) {
 // 非表示のシーンは clientWidth が0なので、画面サイズを渡す
 const context_table = SetupCanvas(document.querySelector('#hello_bg'), window.innerWidth, window.innerHeight);
 
-const RenderTable = CreateNoise([1.0, 0.89, 0.64]);   // #ffe3a4 (--orange_pale)
+const RenderTable = CreateNoise([0.594, 0.467, 0.426], 0.1, [10.0, 1000.0]);   // #ac996d
 RenderTable(context_table, 100);   // 100 = 模様の選び方。数字を変えると柄が変わる

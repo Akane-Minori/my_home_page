@@ -1,0 +1,473 @@
+{
+    "height": 4.3,
+    "gap": 0.02,
+    "points": [
+        [
+            0,
+            0
+        ],
+        [
+            1,
+            0
+        ],
+        [
+            1,
+            4.3
+        ],
+        [
+            0,
+            4.3
+        ],
+        [
+            0,
+            0.8025
+        ],
+        [
+            1,
+            0.5008
+        ],
+        [
+            0.5206,
+            0.6455
+        ],
+        [
+            0.52,
+            0
+        ],
+        [
+            0,
+            1.1642
+        ],
+        [
+            1,
+            1.155
+        ],
+        [
+            0,
+            1.7742
+        ],
+        [
+            1,
+            1.5825
+        ],
+        [
+            0.3828,
+            1.7008
+        ],
+        [
+            0.38,
+            1.16
+        ],
+        [
+            0.2271,
+            0.734
+        ],
+        [
+            0.2243,
+            1.1617
+        ],
+        [
+            0,
+            2.02
+        ],
+        [
+            1,
+            2
+        ],
+        [
+            0,
+            2.3692
+        ],
+        [
+            1,
+            2.365
+        ],
+        [
+            0.2909,
+            2.368
+        ],
+        [
+            0.29,
+            2.015
+        ],
+        [
+            0.6542,
+            2.3664
+        ],
+        [
+            0.655,
+            2.01
+        ],
+        [
+            0,
+            2.945
+        ],
+        [
+            1,
+            3.1725
+        ],
+        [
+            0.295,
+            3.01
+        ],
+        [
+            0,
+            3.3825
+        ],
+        [
+            1,
+            3.4908
+        ],
+        [
+            0.8245,
+            3.1321
+        ],
+        [
+            0.9251,
+            3.4827
+        ],
+        [
+            0.685,
+            3.1
+        ],
+        [
+            0.845,
+            3.475
+        ],
+        [
+            1,
+            3.7475
+        ],
+        [
+            0,
+            3.7825
+        ],
+        [
+            0.926,
+            3.7501
+        ],
+        [
+            0.335,
+            3.42
+        ],
+        [
+            0.295,
+            3.77
+        ]
+    ],
+    "panels": [
+        {
+            "id": "p1",
+            "points": [
+                6,
+                14,
+                4,
+                0,
+                7
+            ],
+            "back": true
+        },
+        {
+            "id": "p2",
+            "points": [
+                14,
+                6,
+                5,
+                9,
+                13,
+                15
+            ],
+            "thumb": "./img/illusts/thumbs/A2_部活16.webp",
+            "img": "./img/illusts/A2_部活16.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p3",
+            "points": [
+                7,
+                1,
+                5,
+                6
+            ],
+            "thumb": "./img/illusts/thumbs/部活20.webp",
+            "img": "./img/illusts/部活20.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p4",
+            "points": [
+                12,
+                10,
+                8,
+                15,
+                13
+            ],
+            "thumb": "./img/illusts/thumbs/部活18.webp",
+            "img": "./img/illusts/部活18.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1.4
+        },
+        {
+            "id": "p5",
+            "points": [
+                16,
+                10,
+                12,
+                11,
+                17,
+                23,
+                21
+            ],
+            "thumb": "./img/illusts/thumbs/部活11.webp",
+            "img": "./img/illusts/部活11.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p6",
+            "points": [
+                13,
+                9,
+                11,
+                12
+            ],
+            "thumb": "./img/illusts/thumbs/部活13-3.webp",
+            "img": "./img/illusts/部活13-3.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1.2
+        },
+        {
+            "id": "p7",
+            "points": [
+                15,
+                8,
+                4,
+                14
+            ],
+            "thumb": "./img/illusts/thumbs/部活19.webp",
+            "img": "./img/illusts/部活19.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1.5
+        },
+        {
+            "id": "p8",
+            "points": [
+                20,
+                18,
+                16,
+                21
+            ],
+            "thumb": "./img/illusts/thumbs/部活10.webp",
+            "img": "./img/illusts/部活10.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1.6
+        },
+        {
+            "id": "p9",
+            "points": [
+                26,
+                24,
+                18,
+                20
+            ],
+            "thumb": "./img/illusts/thumbs/安部菜々03.webp",
+            "img": "./img/illusts/安部菜々03.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p10",
+            "points": [
+                22,
+                20,
+                21,
+                23
+            ],
+            "thumb": "./img/illusts/thumbs/部活6.webp",
+            "img": "./img/illusts/部活6.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p11",
+            "points": [
+                23,
+                17,
+                19,
+                22
+            ],
+            "thumb": "./img/illusts/thumbs/カービィ.webp",
+            "img": "./img/illusts/カービィ.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p12",
+            "points": [
+                29,
+                25,
+                28,
+                30
+            ],
+            "thumb": "./img/illusts/thumbs/日比さん３.webp",
+            "img": "./img/illusts/日比さん３.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p13",
+            "points": [
+                20,
+                22,
+                19,
+                25,
+                29,
+                31,
+                26
+            ],
+            "thumb": "./img/illusts/thumbs/ポスター_A2.webp",
+            "img": "./img/illusts/ポスター_A2.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p14",
+            "points": [
+                33,
+                2,
+                3,
+                34,
+                37,
+                35
+            ],
+            "thumb": "./img/illusts/thumbs/ビラ1.webp",
+            "img": "./img/illusts/ビラ1.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p15",
+            "points": [
+                31,
+                29,
+                30,
+                32
+            ],
+            "thumb": "./img/illusts/thumbs/マンチニール４.webp",
+            "img": "./img/illusts/マンチニール４.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p16",
+            "points": [
+                32,
+                36,
+                27,
+                24,
+                26,
+                31
+            ],
+            "thumb": "./img/illusts/thumbs/タイトル絵.webp",
+            "img": "./img/illusts/タイトル絵.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p17",
+            "points": [
+                32,
+                30,
+                28,
+                33,
+                35
+            ],
+            "thumb": "./img/illusts/thumbs/部活4-2.webp",
+            "img": "./img/illusts/部活4-2.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p18",
+            "points": [
+                36,
+                32,
+                35,
+                37
+            ],
+            "thumb": "./img/illusts/thumbs/c108サクカカラー.webp",
+            "img": "./img/illusts/c108サクカカラー.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        },
+        {
+            "id": "p19",
+            "points": [
+                37,
+                34,
+                27,
+                36
+            ],
+            "thumb": "./img/illusts/thumbs/部活2.webp",
+            "img": "./img/illusts/部活2.webp",
+            "focus": [
+                0.5,
+                0.5
+            ],
+            "zoom": 1
+        }
+    ]
+}

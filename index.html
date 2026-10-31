@@ -5,6 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>安部葉月の城</title>
 
+        <!-- フォントのインクルード -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+
         <!-- cssのインクルード -->
         <link rel="stylesheet" href="./css/mobile/main.css" media="(max-width: 767px)">
         <link rel="stylesheet" href="./css/pc/main.css" media="(min-width: 768px)">
@@ -90,22 +95,59 @@
             <button id="works_illust" data-scene="illusts">イラスト</button>
             <button id="works_music" data-scene="musics">音楽</button>
         </div>
+
+        <!---------------------------------------------------------------------
+         回転テキスト
+         --------------------------------------------------------------------->
+        <svg id="spin_text" viewBox="-350 -350 700 700" aria-hidden="true">
+            <defs>
+                <path id="spin_path_big" d="M -200,0 a 200,200 0 1,1 400,0 a 200,200 0 1,1 -400,0"/>
+                <path id="spin_path_small" d="M -190,0 a 190,190 0 1,1 380,0 a 190,190 0 1,1 -380,0"/>
+            </defs>
+            <text class="spin_big">
+                <textPath id="spin_big_text" href="#spin_path_big" textLength="1256" lengthAdjust="spacing"></textPath>
+            </text>
+            <text class="spin_small">
+                <textPath href="#spin_path_small" textLength="1194" lengthAdjust="spacing">REPLACE THIS SMALL TEXT WITH YOUR OWN SENTENCE.</textPath>
+            </text>
+        </svg>
          
         <!---------------------------------------------------------------------
          ゲーム
          --------------------------------------------------------------------->
         <div class="scene" id="games">
-            ゲーム一覧です<br>
             <button data-scene="works">戻る</button>
+
+            <div id="games_track"></div>
+            <div id="game_card" hidden>
+                <div id="game_card_body">
+                    <h2 id="game_card_title"></h2>
+                    <p id="game_card_text"></p>
+                    <a id="game_card_link" target="_blank" rel="noopener">遊ぶ</a>
+                    <button id="game_card_close">閉じる</button>
+                </div>
+            </div>
         </div>
+
         
         <!---------------------------------------------------------------------
          イラスト
          --------------------------------------------------------------------->
         <div class="scene" id="illusts">
-            イラスト一覧です<br>
             <button data-scene="works">戻る</button>
+            <div id="illusts_track">
+                <svg id="illusts_svg"></svg>
+            </div>
+            <div id="illust_card" hidden>
+                <img id="illust_card_img" alt="">
+                <div id="illust_card_text">
+                    <p id="illust_card_date"></p>
+                    <p id="illust_card_comment"></p>
+                </div>
+                <button id="illust_card_close">閉じる</button>
+            </div>
         </div>
+            
         
         <!---------------------------------------------------------------------
          音楽

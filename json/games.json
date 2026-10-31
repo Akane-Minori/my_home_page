@@ -1,0 +1,22 @@
+[
+    {
+        "id": "game1",
+        "img": "./img/games/game1.webp",
+        "x": 0.3,
+        "y": 0.1,
+        "h": 0.8,
+        "title": "ゲーム1",
+        "text": "ここに説明文が入ります。",
+        "url": "https://example.com"
+    },
+    {
+        "id": "game2",
+        "img": "./img/games/game2.webp",
+        "x": 1.1,
+        "y": 0.2,
+        "h": 0.7,
+        "title": "ゲーム2",
+        "text": "ここに説明文が入ります。",
+        "url": ""
+    }
+]

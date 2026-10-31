@@ -1,4 +1,4 @@
-
+import { SetSpin } from '../spintext.js';
 
 
 let start_time;
@@ -14,7 +14,7 @@ export function EnterMusics()
     enddone = false;
     start_time = performance.now();
 
-    
+    SetSpin("MUSICS", 4);
 }
 
 
@@ -25,6 +25,8 @@ export function EnterMusics()
 export function ExitMusics()
 {
     end_time = performance.now();
+
+    SetSpin();
 
     // 仮
     enddone = true;

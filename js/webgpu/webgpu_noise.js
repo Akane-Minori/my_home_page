@@ -24,9 +24,11 @@ device.queue.writeBuffer(index_buffer, 0, indices);
 const module = device.createShaderModule({
     code: /* wgsl */ `
 
-    struct Uniforms {
+    struct Uniforms
+    {
         tint : vec3f,
         time : f32,
+        scale : vec2f,
         threshold : f32,
     };
     @group(0) @binding(0) var<uniform> u_data : Uniforms;
@@ -93,19 +95,21 @@ const module = device.createShaderModule({
         return mix(y0, y1, u.z);
     }
 
-    @fragment fn fs(input : VSOut) -> @location(0) vec4f {
+    @fragment fn fs(input : VSOut) -> @location(0) vec4f
+    {
+        let uv = input.uv * u_data.scale;
         let flow = u_data.time * 0.02;     // 流れる速さ
         let morph = u_data.time * 0.002;   // 形が変わる速さ
 
-        let wave = sin(input.uv.x * 2.7 + noise3(vec3f(input.uv.x * 0.8, 0.0, morph)) * 3.0) * 1.2;
+        let wave = sin(uv.x * 2.7 + noise3(vec3f(uv.x * 0.8, 0.0, morph)) * 3.0) * 1.2;
 
-        let base = vec3f(input.uv.x * 1.0, input.uv.y * 4.0, morph);
+        let base = vec3f(uv.x, uv.y, morph);
         let w = vec2f(
             noise3(base),
             noise3(base + vec3f(5.2, 1.3, 0.0))
         );
 
-        let q = vec3f(input.uv.x * 0.3 + flow + w.x * 0.2, input.uv.y * 1.8 + wave + w.y, morph);
+        let q = vec3f(uv.x * 0.3 + flow + w.x * 0.2, uv.y * 0.45 + wave + w.y, morph);
         let n = noise3(q);
 
         let m = smoothstep(u_data.threshold - 0.0002, u_data.threshold + 0.0002, n);
@@ -131,7 +135,8 @@ const pipeline = device.createRenderPipeline({
 // tint : 模様の色 [r, g, b](0〜1)
 // 戻り値 : Render(context, time)  context のcanvasに、time 秒ぶんのノイズを描く
 // ----------------------------------------------------------------------------
-export function CreateNoise(tint, threshold = -0.043) {
+export function CreateNoise(tint, threshold = -0.043, scale = [1.0, 4.0])
+{
     const uniform_buffer = device.createBuffer({
         size: 32,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -145,7 +150,7 @@ export function CreateNoise(tint, threshold = -0.043) {
         device.queue.writeBuffer
         (
             uniform_buffer, 0,
-            new Float32Array([...tint, time, threshold])
+            new Float32Array([...tint, time, ...scale, threshold])
         );
 
         const encoder = device.createCommandEncoder();
