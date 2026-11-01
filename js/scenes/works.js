@@ -1,4 +1,6 @@
 import { clips_works, CreateDom, PlayClip } from '../animation_dom.js'
+import { PreloadIllusts } from './illusts.js';
+import { PreloadGames } from '../webgpu/webgpu_games.js';
 
 const dom_back = CreateDom(document.querySelector("#works_back"));
 const dom_game = CreateDom(document.querySelector("#works_game"));
@@ -18,6 +20,10 @@ export function EnterWorks()
 {
     enddone = false;
     start_time = performance.now();
+
+    // 先読み(完了は待たない。各シーンに入るときに待つ)
+    PreloadIllusts();
+    PreloadGames();
 
     PlayClip([dom_back], clips_works.works_back, start_time);
     PlayClip([dom_game], clips_works.works_game, start_time);

@@ -1,22 +1,95 @@
 [
     {
-        "id": "game1",
-        "img": "./img/games/game1.webp",
-        "x": 0.3,
-        "y": 0.1,
+        "id": "pong",
+        "img": "./img/games/pong.webp",
+        "x": 0.6201,
+        "y": 0.2092,
         "h": 0.8,
-        "title": "ゲーム1",
-        "text": "ここに説明文が入ります。",
-        "url": "https://example.com"
+        "name_img": "./img/games/name_pong.webp",
+        "name_x": 0.4347,
+        "name_y": 0.6958,
+        "name_h": 0.08,
+        "title": "PONG+",
+        "text": "エアホッケーです。",
+        "url": "https://cs-launcher-api.akane-minori-cslauncher.workers.dev/games/pong_plus/PONG+ ver.2.zip",
+        "card_imgs": [
+            "./img/games/pong/thumb.webp"
+        ]
     },
     {
-        "id": "game2",
-        "img": "./img/games/game2.webp",
-        "x": 1.1,
-        "y": 0.2,
-        "h": 0.7,
-        "title": "ゲーム2",
-        "text": "ここに説明文が入ります。",
-        "url": ""
+        "id": "picros",
+        "img": "./img/games/picros.webp",
+        "x": 1.1471,
+        "y": 0.6938,
+        "h": 0.2,
+        "name_img": "./img/games/name_picros.webp",
+        "name_x": 1.1184,
+        "name_y": 0.5909,
+        "name_h": 0.08,
+        "title": "FKピクロス",
+        "text": "なんと、ピクロスです",
+        "url": "https://cs-launcher-api.akane-minori-cslauncher.workers.dev/games/fk_picros/FKピクロス.zip",
+        "card_imgs": [
+            "./img/games/picros/thumb.webp",
+            "./img/games/picros/1.webp",
+            "./img/games/picros/2.webp"
+        ]
+    },
+    {
+        "id": "kuchitsuke",
+        "img": "./img/games/kuchitsuke.webp",
+        "x": 1.5274,
+        "y": 0.2744,
+        "h": 0.7304,
+        "name_img": "./img/games/name_kuchitsuke.webp",
+        "name_x": 1.4424,
+        "name_y": 0.8084,
+        "name_h": 0.08,
+        "title": "口を付けたなら最後まで！",
+        "text": "音楽：RGB氏（WCE）\nそれ以外：安部葉月\n\n【広島大GSD主催・第１回１週間ゲームジャム参加作品】\nちょっとふしぎなノベルゲーム。",
+        "url": "https://cs-launcher-api.akane-minori-cslauncher.workers.dev/games/kuchitsuke/口を付けたなら最後まで！.zip",
+        "card_imgs": [
+            "./img/games/kuchitsuke/thumbnail.webp",
+            "./img/games/kuchitsuke/1.webp",
+            "./img/games/kuchitsuke/2.webp",
+            "./img/games/kuchitsuke/3.webp"
+        ]
+    },
+    {
+        "id": "hamster",
+        "img": "./img/games/picros.webp",
+        "x": 2.1173,
+        "y": 0.2258,
+        "h": 0.6,
+        "name_img": "./img/games/name_hamster.webp",
+        "name_x": 2.1857,
+        "name_y": 0.3669,
+        "name_h": 0.08,
+        "title": "ダッシュしろ！ハムスター",
+        "text": "ディレクター：イナダハル氏（WCE）\n絵：ヤマザキコサメ氏、Hantem氏（ムサビゲームラボ）\n音：安部葉月\n\n【ムサビゲームラボ×WCE１週間ゲームジャム参加作品】\nハムスターをゴールまで導くパズルゲームです！\nプレイヤーが設置した標識に沿って、ハムスターは進んでいきます。\nしかしパズルをクリアしていくにつれて、だんだんハムスターは疲れていくようで……？",
+        "url": "https://unityroom.com/games/dash_hamster",
+        "card_imgs": [
+            "./img/games/hamster/thumb.webp",
+            "./img/games/hamster/1.webp"
+        ]
+    },
+    {
+        "id": "threegoma",
+        "img": "./img/games/picros.webp",
+        "x": 2.8849,
+        "y": 0.2148,
+        "h": 0.8,
+        "name_img": "./img/games/name_threegoma.webp",
+        "name_x": 3.0946,
+        "name_y": 0.8823,
+        "name_h": 0.08,
+        "title": "すりごま行進隊",
+        "text": "3つのウィンドウと3つのキャラを使うアクションゲームです",
+        "url": "https://cs-launcher-api.akane-minori-cslauncher.workers.dev/games/threegoma/すりごま行進隊.zip",
+        "card_imgs": [
+            "./img/games/threegoma/thumb.webp",
+            "./img/games/threegoma/1.webp",
+            "./img/games/threegoma/2.webp"
+        ]
     }
 ]

@@ -13,7 +13,6 @@
     #main { flex:1; overflow:auto; display:flex; justify-content:center; padding:20px; }
     svg { width:400px; flex:none; background:#445; touch-action:none; user-select:none; }
     #warn { color:#f88; white-space:pre-wrap; }
-    #thumbPath { font-size:12px; color:#bbb; word-break:break-all; }
 </style>
 </head>
 <body>
@@ -21,8 +20,7 @@
     <h3>ファイル</h3>
     <button id="save">JSONを保存</button>
     <input type="file" id="load" accept=".json">
-    <label>詳細画像をまとめて読み込む <input type="file" id="imgs" accept="image/*" multiple></label>
-    <label>サムネをまとめて読み込む <input type="file" id="thumbs" accept="image/*" multiple></label>
+    <label>画像をまとめて読み込む <input type="file" id="imgs" accept="image/*" multiple></label>
 
     <h3>全体</h3>
     <label>高さ <input type="number" id="height" step="0.1" min="1" style="width:70px"> (幅 = 1)</label>
@@ -32,9 +30,7 @@
     <h3>コマ</h3>
     <button id="split">分割(辺の上を2回クリック)</button>
     <div id="info"></div>
-    <label>詳細画像(原寸) <input type="file" id="img" accept="image/*"></label>
-    <label>サムネ画像 <input type="file" id="thumb" accept="image/*"></label>
-    <div id="thumbPath"></div>
+    <label>画像 <input type="file" id="img" accept="image/*"></label>
     <button id="clearImg">画像を外す</button>
     <label>作成日 <input type="date" id="date"></label>
     <label>一言コメント<br><textarea id="comment" rows="3" style="width:100%;box-sizing:border-box"></textarea></label>
@@ -154,7 +150,6 @@ function Validate(data) {
         if (pts.length < 3) { warnings.push(`${panel.id}: 点が3つ未満です`); continue; }
         if (Math.abs(SignedArea(pts)) < 1e-6) warnings.push(`${panel.id}: つぶれています`);
         else if (!IsConvex(pts)) warnings.push(`${panel.id}: へこんだ形です`);
-        if (panel.img && !panel.thumb) warnings.push(`${panel.id}: サムネ(thumb)が未設定です`);
     }
     return warnings;
 }
@@ -195,12 +190,6 @@ function GetImg(path) {
     return imgCache[path];
 }
 
-// プレビューに使う画像: サムネが読めればサムネ、なければ詳細画像(縦横比は同じ前提)
-function PreviewImg(p) {
-    if (p.thumb) { const t = GetImg(p.thumb); if (t.ok) return t; }
-    return GetImg(p.img);
-}
-
 // ---------------------------------------------------------------- 描画
 function Render() {
     const gap = gapValue();
@@ -220,7 +209,7 @@ function Render() {
             body += `<polygon points="${shape}" fill="#ff21ac"/>`;
             body += `<text x="${(box.x0 + box.x1) / 2}" y="${(box.y0 + box.y1) / 2}" font-size="0.06" fill="#fff" text-anchor="middle" dominant-baseline="middle">戻る</text>`;
         } else if (p.img) {
-            const im = PreviewImg(p);
+            const im = GetImg(p.img);
             if (im.ok) {
                 const f = FitImage(box, im.w, im.h, p.focus ?? [0.5, 0.5], p.zoom ?? 1);
                 body += `<image href="${im.el.src}" x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" preserveAspectRatio="none" clip-path="url(#c${i})"/>`;
@@ -257,7 +246,6 @@ function UpdateSide() {
     $('info').textContent = p ? `選択中: ${p.id}` : 'コマを選んでください';
     $('zoom').value = p?.zoom ?? 1;
     $('back').checked = !!p?.back;
-    $('thumbPath').textContent = p?.thumb ? `サムネ: ${p.thumb}` : '';
     $('date').disabled = $('comment').disabled = !p || !!p.back;
     $('date').value = p?.date ?? '';
     if (document.activeElement !== $('comment')) $('comment').value = p?.comment ?? '';
@@ -370,7 +358,7 @@ svg.addEventListener('pointermove', (e) => {
         data.points[drag.idx] = [Clamp(Snap(m[0], e), 0, 1), Clamp(Snap(m[1], e), 0, data.height)];
     } else {
         // 画像を動かした向きと逆に、見せたい位置をずらす
-        const p = drag.p, im = PreviewImg(p);
+        const p = drag.p, im = GetImg(p.img);
         const box = Bounds(ShrinkPolygon(PanelPoints(data, p), gapValue()));
         const fc = p.focus ?? [0.5, 0.5];
         const f = FitImage(box, im.w, im.h, fc, p.zoom ?? 1);
@@ -413,8 +401,6 @@ $('img').onchange = (e) => {
     localUrls[path] = URL.createObjectURL(f);
     delete imgCache[path];
     p.img = path; p.focus = [0.5, 0.5]; p.zoom = 1; delete p.back;
-    p.thumb = `./img/illusts/thumbs/${f.name.replace(/\.[^.]+$/, '')}.webp`;   // サムネは webp で thumbs に置く
-    delete imgCache[p.thumb];
     e.target.value = '';
     Render();
 };
@@ -431,26 +417,7 @@ $('clearImg').onclick = () => {
     const p = selected && panelOf(selected);
     if (!p) return;
     Push();
-    delete p.img; delete p.thumb; delete p.focus; delete p.zoom;
-    Render();
-};
-
-$('thumb').onchange = (e) => {
-    const f = e.target.files[0], p = selected && panelOf(selected);
-    if (!f || !p) return;
-    Push();
-    const path = `./img/illusts/thumbs/${f.name}`;
-    localUrls[path] = URL.createObjectURL(f);
-    delete imgCache[path];
-    p.thumb = path;
-    e.target.value = '';
-    Render();
-};
-
-$('thumbs').onchange = (e) => {
-    for (const f of e.target.files) localUrls[`./img/illusts/thumbs/${f.name}`] = URL.createObjectURL(f);
-    for (const k of Object.keys(imgCache)) delete imgCache[k];
-    e.target.value = '';
+    delete p.img; delete p.focus; delete p.zoom;
     Render();
 };
 
@@ -509,7 +476,6 @@ $('save').onclick = () => {
         panels: data.panels.map(p => {
             const o = { id: p.id, points: p.points };
             if (p.back) o.back = true;
-            if (p.thumb) o.thumb = p.thumb;
             if (p.img) o.img = p.img;
             if (p.date) o.date = p.date;
             if (p.comment) o.comment = p.comment;

@@ -3,7 +3,6 @@ const card = document.querySelector('#illust_card');
 const img = document.querySelector('#illust_card_img');
 const date = document.querySelector('#illust_card_date');
 const comment = document.querySelector('#illust_card_comment');
-const close = document.querySelector('#illust_card_close');
 
 let token = 0;      // 開くたびに増やす番号。閉じたあとに届いた画像を捨てるために使う
 
@@ -55,7 +54,6 @@ export function IsIllustCardOpen()
     return !card.hidden;
 }
 
-// 閉じる操作:ボタン、カードの外側、Esc
-close.addEventListener('click', CloseIllustCard);
+// 閉じる操作:カードの外側、Esc
 card.addEventListener('click', (e) => { if (e.target === card) CloseIllustCard(); });
 window.addEventListener('keydown', (e) => { if (e.key === 'Escape') CloseIllustCard(); });

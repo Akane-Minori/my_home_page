@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>ゲーム一覧エディター</title>
+<style>
+    body { margin:0; display:flex; height:100vh; font:14px sans-serif; background:#222; color:#eee; }
+    #side { width:300px; padding:12px; box-sizing:border-box; overflow:auto; background:#333; flex:none; }
+    #side h3 { margin:16px 0 4px; font-size:13px; color:#fa9; }
+    #side label { display:block; margin-top:4px; }
+    #side input[type=text], #side textarea { width:100%; box-sizing:border-box; }
+    #side input[type=number] { width:64px; }
+    #side button { padding:4px 8px; margin-top:4px; }
+    #fields { border:none; margin:0; padding:0; min-width:0; }
+    .path { font-size:12px; color:#aaa; word-break:break-all; }
+    .nums { margin-top:4px; }
+    .cimg { display:flex; align-items:center; gap:4px; margin-top:4px; }
+    .cimg img { width:56px; height:56px; object-fit:contain; background:#444; flex:none; }
+    .cimg .path { flex:1; min-width:0; }
+    .cimg button { margin-top:0; padding:2px 6px; }
+    #list { max-height:160px; overflow:auto; background:#2a2a2a; }
+    .row { padding:3px 6px; cursor:pointer; }
+    .row.on { background:#fa9; color:#222; }
+    #warn { color:#f88; white-space:pre-wrap; margin-top:10px; }
+
+    #main { flex:1; overflow:auto; padding:20px; }
+    #stage { position:relative; background:#445; touch-action:none; user-select:none; }
+    #guide { position:absolute; left:0; top:0; height:100%; aspect-ratio:16/9; box-sizing:border-box;
+             border:1px dashed #fff6; font-size:11px; color:#fff8; padding:2px 4px; pointer-events:none; }
+    #items { position:absolute; inset:0; }
+
+    .item { position:absolute; cursor:move; }
+    .item img { width:100%; height:100%; display:block; pointer-events:none; }
+    .item:hover { z-index:6; }
+    .item.sel { outline:2px solid #fa9; z-index:5; }
+    .item.empty { background:#6668; border:1px dashed #ccc; box-sizing:border-box; font-size:12px;
+                  display:flex; align-items:center; justify-content:center; }
+    .nm { position:absolute; display:none; outline:1px dashed #9cf; cursor:move; }
+    .nm img { width:100%; height:100%; display:block; pointer-events:none; }
+    .nm.show, .item:hover .nm { display:block; }
+</style>
+</head>
+<body>
+<div id="side">
+    <h3>ファイル</h3>
+    <button id="save">JSONを保存</button>
+    <label>JSONを読み込む <input type="file" id="load" accept=".json"></label>
+    <label>画像をまとめて読み込む <input type="file" id="imgs" accept="image/*" multiple></label>
+
+    <h3>ゲーム一覧</h3>
+    <div id="list"></div>
+    <div>
+        <button id="add">追加</button>
+        <button id="del">削除</button>
+        <button id="up" data-move="-1">↑</button>
+        <button id="down" data-move="1">↓</button>
+    </div>
+
+    <fieldset id="fields" disabled>
+        <h3>カード</h3>
+        <label>ID <input type="text" data-key="id"></label>
+        <label>タイトル <input type="text" data-key="title"></label>
+        <label>説明文 <textarea data-key="text" rows="5"></textarea></label>
+        <label>DLリンク <input type="text" data-key="url" placeholder="https://..."></label>
+        <div>紹介画像(複数可) <input type="file" data-key="card_imgs" accept="image/*" multiple></div>
+        <div id="cardImgs"></div>
+
+        <h3>立ち絵</h3>
+        <div>画像 <input type="file" data-key="img" accept="image/*"> <button data-clear="img">外す</button></div>
+        <div class="path" data-path="img"></div>
+        <div class="nums">
+            x <input type="number" data-key="x" step="0.01">
+            y <input type="number" data-key="y" step="0.01">
+            h <input type="number" data-key="h" step="0.01">
+        </div>
+
+        <h3>名前画像(ホバー時)</h3>
+        <div>画像 <input type="file" data-key="name_img" accept="image/*"> <button data-clear="name_img">外す</button></div>
+        <div class="path" data-path="name_img"></div>
+        <div class="nums">
+            x <input type="number" data-key="name_x" step="0.01">
+            y <input type="number" data-key="name_y" step="0.01">
+            h <input type="number" data-key="name_h" step="0.01">
+        </div>
+
+        <h3>表示</h3>
+        <label><input type="checkbox" id="showAll"> すべての名前画像を表示</label>
+    </fieldset>
+
+    <h3>操作</h3>
+    <div>
+        立ち絵・名前画像: ドラッグで移動(Alt で細かく)、ホイールで大きさ<br>
+        Ctrl+Z: 元に戻す<br>
+        位置と大きさの単位は、画面の高さ = 1.0(ゲーム本体と同じ)<br>
+        名前画像の位置は、立ち絵と同じ座標で指定します<br>
+        立ち絵と名前画像は ./img/games/ に置いてください<br>
+        紹介画像は ./img/games/&lt;ID&gt;/ に置いてください(IDを変えたらフォルダ名も変更)
+    </div>
+    <div id="warn"></div>
+</div>
+
+<div id="main">
+    <div id="stage">
+        <div id="guide">1画面目(16:9)</div>
+        <div id="items"></div>
+    </div>
+</div>
+
+<script>
+const DIR = './img/games/';
+const RATIO = 16 / 9;
+
+const elMain = document.getElementById('main');
+const elStage = document.getElementById('stage');
+const elItems = document.getElementById('items');
+const elList = document.getElementById('list');
+const elFields = document.getElementById('fields');
+const elCardImgs = document.getElementById('cardImgs');
+const elWarn = document.getElementById('warn');
+
+let games = [];
+let sel = -1;
+let U = 500;                 // 1.0 にあたる長さ(px)
+let showAll = false;
+let drag = null;
+let lastWheel = 0;
+
+const localUrls = {};        // パス → 読み込んだ画像のURL
+const aspects = {};          // パス → 縦横比(幅 / 高さ)
+const loading = {};
+const undoStack = [];
+
+// ----------------------------------------------------------------------------
+// データ
+// ----------------------------------------------------------------------------
+function Round4(v) { return Math.round(v * 10000) / 10000; }
+
+function Pick(v, d) { return v === undefined || v === null ? d : v; }
+
+function Normalize(s, i) {
+    const x = Pick(s.x, 0.3);
+    const y = Pick(s.y, 0.1);
+    const h = Pick(s.h, 0.8);
+    return {
+        id: Pick(s.id, 'game' + (i + 1)),
+        img: Pick(s.img, ''),
+        x: x, y: y, h: h,
+        name_img: Pick(s.name_img, ''),
+        name_x: Pick(s.name_x, x),
+        name_y: Pick(s.name_y, Round4(y + h)),
+        name_h: Pick(s.name_h, 0.1),
+        title: Pick(s.title, ''),
+        text: Pick(s.text, ''),
+        url: Pick(s.url, ''),
+        card_imgs: Pick(s.card_imgs, []),
+    };
+}
+
+function SetGames(list) {
+    games = [];
+    for (let i = 0; i < list.length; i++) games.push(Normalize(list[i], i));
+    sel = games.length ? 0 : -1;
+    Render();
+}
+
+// ----------------------------------------------------------------------------
+// 元に戻す
+// ----------------------------------------------------------------------------
+function Push() {
+    undoStack.push(JSON.stringify({ games: games, sel: sel }));
+    if (undoStack.length > 100) undoStack.shift();
+}
+
+function Undo() {
+    if (!undoStack.length) return;
+    const s = JSON.parse(undoStack.pop());
+    games = s.games;
+    sel = s.sel;
+    Render();
+}
+
+// ----------------------------------------------------------------------------
+// 画像
+// ----------------------------------------------------------------------------
+function Src(path) {
+    if (localUrls[path]) return localUrls[path];
+    if (path.indexOf('./') === 0) return '.' + path;
+    return '../' + path;
+}
+
+function ForgetAspect(path) {
+    delete aspects[path];
+    delete loading[path];
+}
+
+function OnAspectLoad() {
+    aspects[this.dataset.path] = this.naturalWidth / this.naturalHeight;
+    RenderStage();
+}
+
+function OnAspectError() {
+    aspects[this.dataset.path] = 0.6;
+}
+
+// 縦横比を返す。まだ読み込んでいなければ、読み込みを始めて仮の値を返す
+function Aspect(path) {
+    if (!path) return 0.6;
+    if (aspects[path]) return aspects[path];
+    if (!loading[path]) {
+        loading[path] = true;
+        const im = new Image();
+        im.dataset.path = path;
+        im.onload = OnAspectLoad;
+        im.onerror = OnAspectError;
+        im.src = Src(path);
+    }
+    return 0.6;
+}
+
+// ----------------------------------------------------------------------------
+// 描画
+// ----------------------------------------------------------------------------
+function Render() {
+    RenderList();
+    FillFields();
+    RenderCardImgs();
+    RenderStage();
+    Check();
+}
+
+function RenderList() {
+    elList.textContent = '';
+    for (let i = 0; i < games.length; i++) {
+        const row = document.createElement('div');
+        row.className = 'row' + (i === sel ? ' on' : '');
+        row.dataset.index = i;
+        row.textContent = (i + 1) + '. ' + (games[i].title || games[i].id);
+        elList.append(row);
+    }
+}
+
+function FillFields() {
+    elFields.disabled = sel < 0;
+    const g = sel < 0 ? null : games[sel];
+
+    const inputs = elFields.querySelectorAll('[data-key]');
+    for (let i = 0; i < inputs.length; i++) {
+        const t = inputs[i];
+        if (t.type === 'file') { t.value = ''; continue; }
+        t.value = g ? g[t.dataset.key] : '';
+    }
+
+    const paths = elFields.querySelectorAll('[data-path]');
+    for (let i = 0; i < paths.length; i++) {
+        const p = g ? g[paths[i].dataset.path] : '';
+        paths[i].textContent = p || '(なし)';
+    }
+}
+
+function MakeButton(label, act, i) {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.dataset.act = act;
+    b.dataset.index = i;
+    return b;
+}
+
+function RenderCardImgs() {
+    elCardImgs.textContent = '';
+    if (sel < 0) return;
+    const list = games[sel].card_imgs;
+    for (let i = 0; i < list.length; i++) {
+        const row = document.createElement('div');
+        row.className = 'cimg';
+        const im = document.createElement('img');
+        im.src = Src(list[i]);
+        const p = document.createElement('div');
+        p.className = 'path';
+        p.textContent = list[i];
+        row.append(im, p, MakeButton('↑', 'up', i), MakeButton('↓', 'down', i), MakeButton('外す', 'del', i));
+        elCardImgs.append(row);
+    }
+}
+
+function OnCardImgClick(e) {
+    const act = e.target.dataset.act;
+    if (!act || sel < 0) return;
+    const i = Number(e.target.dataset.index);
+    const list = games[sel].card_imgs;
+    if (act === 'del') {
+        Push();
+        list.splice(i, 1);
+    } else {
+        const j = i + (act === 'up' ? -1 : 1);
+        if (j < 0 || j >= list.length) return;
+        Push();
+        const tmp = list[i];
+        list[i] = list[j];
+        list[j] = tmp;
+    }
+    Render();
+}
+
+function StyleItem(el, g) {
+    el.style.left = g.x * U + 'px';
+    el.style.top = g.y * U + 'px';
+    el.style.height = g.h * U + 'px';
+    el.style.width = g.h * U * Aspect(g.img) + 'px';
+
+    const nm = el.querySelector('.nm');
+    if (nm) {
+        nm.style.left = (g.name_x - g.x) * U + 'px';
+        nm.style.top = (g.name_y - g.y) * U + 'px';
+        nm.style.height = g.name_h * U + 'px';
+        nm.style.width = g.name_h * U * Aspect(g.name_img) + 'px';
+    }
+}
+
+function MakeItem(i) {
+    const g = games[i];
+    const el = document.createElement('div');
+    el.className = 'item' + (g.img ? '' : ' empty');
+    el.dataset.index = i;
+
+    if (g.img) {
+        const im = document.createElement('img');
+        im.src = Src(g.img);
+        el.append(im);
+    } else {
+        el.append('立ち絵なし');
+    }
+
+    if (g.name_img) {
+        const nm = document.createElement('div');
+        nm.className = 'nm';
+        const im = document.createElement('img');
+        im.src = Src(g.name_img);
+        nm.append(im);
+        el.append(nm);
+    }
+
+    StyleItem(el, g);
+    return el;
+}
+
+function RenderStage() {
+    U = Math.max(300, elMain.clientHeight - 60);
+
+    let extent = RATIO;
+    for (let i = 0; i < games.length; i++) {
+        const g = games[i];
+        let r = g.x + g.h * Aspect(g.img);
+        if (r > extent) extent = r;
+        if (g.name_img) {
+            r = g.name_x + g.name_h * Aspect(g.name_img);
+            if (r > extent) extent = r;
+        }
+    }
+    elStage.style.width = (extent + 0.1) * U + 'px';
+    elStage.style.height = U + 'px';
+
+    elItems.textContent = '';
+    for (let i = 0; i < games.length; i++) elItems.append(MakeItem(i));
+    MarkSelected();
+}
+
+function MarkSelected() {
+    const els = elItems.children;
+    for (let i = 0; i < els.length; i++) {
+        const idx = Number(els[i].dataset.index);
+        els[i].classList.toggle('sel', idx === sel);
+        const nm = els[i].querySelector('.nm');
+        if (nm) nm.classList.toggle('show', showAll || idx === sel);
+    }
+}
+
+function Select(i) {
+    sel = i;
+    RenderList();
+    FillFields();
+    RenderCardImgs();
+    MarkSelected();
+}
+
+function Check() {
+    const msgs = [];
+    const seen = {};
+    for (let i = 0; i < games.length; i++) {
+        const g = games[i];
+        if (seen[g.id]) msgs.push(g.id + ': IDが重複しています');
+        seen[g.id] = true;
+        if (!g.img) msgs.push(g.id + ': 立ち絵がありません');
+        for (let j = 0; j < g.card_imgs.length; j++) {
+            if (g.card_imgs[j].indexOf(DIR + g.id + '/') !== 0) {
+                msgs.push(g.id + ': 紹介画像のパスがIDのフォルダと一致しません\n  ' + g.card_imgs[j]);
+            }
+        }
+    }
+    elWarn.textContent = msgs.join('\n');
+}
+
+// ----------------------------------------------------------------------------
+// 一覧の操作
+// ----------------------------------------------------------------------------
+function OnListClick(e) {
+    const row = e.target.closest('.row');
+    if (row) Select(Number(row.dataset.index));
+}
+
+function Add() {
+    Push();
+    const last = games[games.length - 1];
+    const x = last ? Round4(last.x + last.h * Aspect(last.img) + 0.1) : 0.3;
+    games.push(Normalize({ x: x, y: 0.1, h: 0.8 }, games.length));
+    sel = games.length - 1;
+    Render();
+}
+
+function Remove() {
+    if (sel < 0) return;
+    Push();
+    games.splice(sel, 1);
+    sel = Math.min(sel, games.length - 1);
+    Render();
+}
+
+function OnMove(e) {
+    const j = sel + Number(e.currentTarget.dataset.move);
+    if (sel < 0 || j < 0 || j >= games.length) return;
+    Push();
+    const tmp = games[sel];
+    games[sel] = games[j];
+    games[j] = tmp;
+    sel = j;
+    Render();
+}
+
+// ----------------------------------------------------------------------------
+// 入力欄
+// ----------------------------------------------------------------------------
+function OnFieldChange(e) {
+    const t = e.target;
+
+    if (t.id === 'showAll') {
+        showAll = t.checked;
+        MarkSelected();
+        return;
+    }
+
+    const key = t.dataset.key;
+    if (!key || sel < 0) return;
+
+    if (t.type === 'file') {
+        const files = t.files;
+        if (!files.length) return;
+        Push();
+        const g = games[sel];
+        if (key === 'card_imgs') {
+            for (let i = 0; i < files.length; i++) {
+                const path = DIR + g.id + '/' + files[i].name;
+                localUrls[path] = URL.createObjectURL(files[i]);
+                if (g.card_imgs.indexOf(path) < 0) g.card_imgs.push(path);
+            }
+        } else {
+            const path = DIR + files[0].name;
+            localUrls[path] = URL.createObjectURL(files[0]);
+            ForgetAspect(path);
+            g[key] = path;
+        }
+        Render();
+        return;
+    }
+
+    if (t.type === 'number') {
+        const v = parseFloat(t.value);
+        if (isNaN(v)) { FillFields(); return; }
+        Push();
+        games[sel][key] = v;
+    } else {
+        Push();
+        games[sel][key] = t.value;
+    }
+    Render();
+}
+
+function OnFieldClick(e) {
+    const key = e.target.dataset.clear;
+    if (!key || sel < 0) return;
+    Push();
+    games[sel][key] = '';
+    Render();
+}
+
+// ----------------------------------------------------------------------------
+// ステージの操作
+// ----------------------------------------------------------------------------
+function OnPointerDown(e) {
+    if (e.button !== 0) return;
+    const hit = e.target.closest('.item');
+    if (!hit) return;
+    const onName = !!e.target.closest('.nm');
+    const i = Number(hit.dataset.index);
+
+    // 入力中の欄があれば確定させる(確定で描画し直されるので、その後に要素を探す)
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+    const item = elItems.querySelector('.item[data-index="' + i + '"]');
+    if (!item) return;
+
+    if (i !== sel) Select(i);
+
+    const g = games[i];
+    if (onName && item.querySelector('.nm')) {
+        drag = { kind: 'name', i: i, item: item, x0: e.clientX, y0: e.clientY, ox: g.name_x, oy: g.name_y, pushed: false };
+    } else {
+        drag = { kind: 'art', i: i, item: item, x0: e.clientX, y0: e.clientY, ox: g.x, oy: g.y, pushed: false };
+    }
+    elStage.setPointerCapture(e.pointerId);
+    e.preventDefault();
+}
+
+function OnPointerMove(e) {
+    if (!drag) return;
+    if (!drag.pushed) { Push(); drag.pushed = true; }
+
+    const k = e.altKey ? 0.1 : 1;
+    const dx = (e.clientX - drag.x0) / U * k;
+    const dy = (e.clientY - drag.y0) / U * k;
+    const g = games[drag.i];
+    if (drag.kind === 'art') {
+        g.x = Round4(drag.ox + dx);
+        g.y = Round4(drag.oy + dy);
+    } else {
+        g.name_x = Round4(drag.ox + dx);
+        g.name_y = Round4(drag.oy + dy);
+    }
+    StyleItem(drag.item, g);
+    FillFields();
+}
+
+function OnPointerUp() {
+    if (!drag) return;
+    drag = null;
+    RenderStage();
+    Check();
+}
+
+function OnWheel(e) {
+    const hit = e.target.closest('.item');
+    if (!hit) return;
+    e.preventDefault();
+
+    const i = Number(hit.dataset.index);
+    if (i !== sel) Select(i);
+
+    if (e.timeStamp - lastWheel > 500) Push();
+    lastWheel = e.timeStamp;
+
+    const step = e.altKey ? 1.01 : 1.04;
+    const f = e.deltaY < 0 ? step : 1 / step;
+    const g = games[i];
+    if (e.target.closest('.nm')) g.name_h = Round4(g.name_h * f);
+    else g.h = Round4(g.h * f);
+    StyleItem(hit, g);
+    FillFields();
+}
+
+function OnKey(e) {
+    if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
+    const tag = e.target.tagName;
+    if (tag === 'TEXTAREA') return;
+    if (tag === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'file') return;
+    e.preventDefault();
+    Undo();
+}
+
+// ----------------------------------------------------------------------------
+// ファイル
+// ----------------------------------------------------------------------------
+function Save() {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(games, null, 4)], { type: 'application/json' }));
+    a.download = 'games.json';
+    a.click();
+}
+
+function ParseJson(text) {
+    let list;
+    try {
+        list = JSON.parse(text);
+    } catch (err) {
+        alert('JSONを読めませんでした');
+        return;
+    }
+    if (!Array.isArray(list)) {
+        alert('games.json は配列である必要があります');
+        return;
+    }
+    Push();
+    SetGames(list);
+}
+
+function OnLoadJson(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    f.text().then(ParseJson);
+    e.target.value = '';
+}
+
+function OnImgs(e) {
+    const files = e.target.files;
+    for (let i = 0; i < files.length; i++) {
+        const path = DIR + files[i].name;
+        localUrls[path] = URL.createObjectURL(files[i]);
+        ForgetAspect(path);
+    }
+    e.target.value = '';
+    Render();
+}
+
+// ----------------------------------------------------------------------------
+// 起動
+// ----------------------------------------------------------------------------
+document.getElementById('save').addEventListener('click', Save);
+document.getElementById('load').addEventListener('change', OnLoadJson);
+document.getElementById('imgs').addEventListener('change', OnImgs);
+document.getElementById('add').addEventListener('click', Add);
+document.getElementById('del').addEventListener('click', Remove);
+document.getElementById('up').addEventListener('click', OnMove);
+document.getElementById('down').addEventListener('click', OnMove);
+elList.addEventListener('click', OnListClick);
+elFields.addEventListener('change', OnFieldChange);
+elFields.addEventListener('click', OnFieldClick);
+elCardImgs.addEventListener('click', OnCardImgClick);
+
+elStage.addEventListener('pointerdown', OnPointerDown);
+elStage.addEventListener('pointermove', OnPointerMove);
+elStage.addEventListener('pointerup', OnPointerUp);
+elStage.addEventListener('pointercancel', OnPointerUp);
+elStage.addEventListener('wheel', OnWheel, { passive: false });
+window.addEventListener('keydown', OnKey);
+window.addEventListener('resize', RenderStage);
+
+// 開いたときに ../json/games.json を読む(file:// で開いた場合は読めないので、JSONを読み込むボタンを使う)
+function ReadResponse(r) {
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+}
+function NoDefault() { Render(); }
+fetch('../json/games.json').then(ReadResponse).then(SetGames).catch(NoDefault);
+
+Render();
+</script>
+</body>
+</html>

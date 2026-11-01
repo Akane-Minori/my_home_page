@@ -9,7 +9,7 @@ const FOLLOW = 0.12;    // スクロールの追従の速さ(大きいほど速�
 
 // 縁取りの設定(PAD より小さい合計にする)
 const white = { px: 18, color: [1.0, 1.0, 1.0, 1] };
-const brown = { px: 2, color: [0.34, 0.22, 0.20, 1] };
+const brown = { px: 4, color: [0.34, 0.22, 0.20, 1] };
 
 const track = document.querySelector('#games_track');
 
@@ -45,6 +45,21 @@ async function SetupItem(data) {
     button.append(canvas);
     track.append(button);
 
+        // ホバー時に出す名前画像(位置は立ち絵と同じ座標系)
+    let name = null;
+    if (data.name_img) {
+        const size = await GetImageSize(data.name_img);
+        name = document.createElement('img');
+        name.className = 'game_name';
+        name.src = data.name_img;
+        name.hidden = true;
+        name.style.setProperty('--x', data.name_x);
+        name.style.setProperty('--y', data.name_y);
+        name.style.setProperty('--h', data.name_h);
+        name.style.setProperty('--aspect', size.imgW / size.imgH);
+        track.append(name);
+    }
+
     const context = SetupCanvas(canvas, W, H);
 
     // 縁取りなしの絵を、1回だけ描いておく
@@ -68,8 +83,8 @@ async function SetupItem(data) {
         device.queue.submit([enc.finish()]);
     }
 
-    button.addEventListener('mouseenter', () => Render(1));
-    button.addEventListener('mouseleave', () => Render(0));
+    button.addEventListener('mouseenter', () => { Render(1); if (name) name.hidden = false; });
+    button.addEventListener('mouseleave', () => { Render(0); if (name) name.hidden = true; });
     button.addEventListener('click', () => OpenCard(data));
     Render(0);
 
@@ -84,7 +99,12 @@ async function Load() {
         console.error('games: 読み込み失敗', e);
     }
 }
-const ready = Load();
+let ready = null;
+
+export function PreloadGames() {
+    if (!ready) ready = Load();
+    return ready;
+}
 
 function OnWheel(e) {
     if (IsCardOpen()) return;
@@ -101,7 +121,7 @@ function Tick() {
 // 立ち絵の読み込みが終わってから、スクロールを始める
 export async function StartGames() {
     running = true;
-    await ready;
+    await PreloadGames();
     if (!running) return;
 
     scroll = target = 0;

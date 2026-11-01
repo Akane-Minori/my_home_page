@@ -208,7 +208,7 @@
 
 
 /* テスト用　戻るボタン下げ */
-button:not(.titlebutton):not(#hello_backbutton):not(.game_item):not(#game_card_close):not(#illust_card_close)
+button:not(.titlebutton):not(#hello_backbutton):not(.game_item):not(#game_card_close):not(#illust_card_close):not(#game_card_prev):not(#game_card_next)
 {
     position: relative;
     top: 30px;
@@ -305,6 +305,17 @@ button:not(.titlebutton):not(#hello_backbutton):not(.game_item):not(#game_card_c
     height: calc((var(--img-h) + var(--pad) * 2) / var(--img-h) * 100%);
 }
 
+.game_name
+{
+    position:absolute;
+    left:calc(var(--x) * var(--u));
+    top:calc(var(--y) * var(--u));
+    height:calc(var(--h) * var(--u));
+    width:calc(var(--h) * var(--u) * var(--aspect));
+    z-index:1;                /* 隣の立ち絵より前に出す */
+    pointer-events:none;      /* ホバーの邪魔をしない */
+}
+
 #game_card
 {
     position:fixed;
@@ -327,6 +338,59 @@ button:not(.titlebutton):not(#hello_backbutton):not(.game_item):not(#game_card_c
     padding:32px;
     background:var(--white);
     color:var(--brown);
+}
+
+#game_card_text
+{
+    white-space:pre-line;
+}
+
+#game_card_images
+{
+    position:relative;
+    margin-bottom:16px;
+}
+
+#game_card_images [hidden]
+{
+    display:none;
+}
+
+#game_card_image
+{
+    display:block;
+    width:100%;
+    max-height:40vh;
+    object-fit:contain;
+}
+
+#game_card_prev,
+#game_card_next
+{
+    position:absolute;
+    top:50%;
+    translate:0 -50%;
+    width:44px;
+    aspect-ratio:1 / 1;
+    border-radius:50%;
+    border:2px solid var(--brown);
+    background-color:var(--white);
+    color:var(--brown);
+    cursor:pointer;
+}
+
+#game_card_prev { left:8px; }
+#game_card_next { right:8px; }
+
+#game_card_count
+{
+    position:absolute;
+    right:8px;
+    bottom:8px;
+    padding:2px 8px;
+    background:var(--white);
+    color:var(--brown);
+    font-size:0.9rem;
 }
 
 

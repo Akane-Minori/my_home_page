@@ -39,11 +39,7 @@ function CheckExit()
 // ----------------------------------------------------------------------------
 // シーン遷移の処理付け
 // ----------------------------------------------------------------------------
-
-
-function OnSceneButtonClick(event) {
-    const id = event.currentTarget.dataset.scene;
-
+export function ChangeScene(id) {
     exit_scene = current_scene;
     next_scene = id;
     current_scene = id;
@@ -58,5 +54,5 @@ function OnSceneButtonClick(event) {
 
 const buttons = document.querySelectorAll('[data-scene]');
 for (let i = 0; i < buttons.length; i++) {
-    buttons[i].addEventListener('click', OnSceneButtonClick);
+    buttons[i].addEventListener('click', ChangeScene.bind(null, buttons[i].dataset.scene));
 }

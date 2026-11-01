@@ -1,6 +1,7 @@
 import { SetSpin } from '../spintext.js';
 import { PanelPoints, ShrinkPolygon, Bounds, FitImage, PointsAttr } from './illusts_panel.js';
 import { OpenIllustCard, CloseIllustCard, IsIllustCardOpen, ThumbPath } from './illusts_card.js';
+import { ChangeScene } from '../scenechange.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAX_WIDTH = 400;      // ページの最大幅(px)
@@ -49,7 +50,7 @@ function OnPanelClick(panel, ratio)
     if (IsIllustCardOpen()) return;
     if (panel.back)
     {
-        window.dispatchEvent(new CustomEvent('changescene', { detail: 'works' }));
+        ChangeScene('works');
         return;
     }
     if (!panel.img) return;     // 絵のないコマは、何も開かない
@@ -136,7 +137,13 @@ async function Build()
         console.error('illusts: 読み込み失敗', e);
     }
 }
-const ready = Build();
+let ready = null;
+
+export function PreloadIllusts()
+{
+    if (!ready) ready = Build();
+    return ready;
+}
 
 // ----------------------------------------------------------------------------
 // 縦スクロール
@@ -171,7 +178,7 @@ export async function EnterIllusts()
     SetSpin("ILLUSTS", 4);
 
     running = true;
-    await ready;
+    await PreloadIllusts();
     if (!running) return;
 
     scroll = target = 0;

@@ -121,10 +121,15 @@
             <div id="games_track"></div>
             <div id="game_card" hidden>
                 <div id="game_card_body">
+                    <div id="game_card_images" hidden>
+                        <img id="game_card_image" alt="">
+                        <button id="game_card_prev" data-step="-1">‹</button>
+                        <button id="game_card_next" data-step="1">›</button>
+                        <span id="game_card_count"></span>
+                    </div>
                     <h2 id="game_card_title"></h2>
                     <p id="game_card_text"></p>
                     <a id="game_card_link" target="_blank" rel="noopener">遊ぶ</a>
-                    <button id="game_card_close">閉じる</button>
                 </div>
             </div>
         </div>
@@ -134,7 +139,6 @@
          イラスト
          --------------------------------------------------------------------->
         <div class="scene" id="illusts">
-            <button data-scene="works">戻る</button>
             <div id="illusts_track">
                 <svg id="illusts_svg"></svg>
             </div>
@@ -144,7 +148,6 @@
                     <p id="illust_card_date"></p>
                     <p id="illust_card_comment"></p>
                 </div>
-                <button id="illust_card_close">閉じる</button>
             </div>
         </div>
             
