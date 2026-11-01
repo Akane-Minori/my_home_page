@@ -2,6 +2,7 @@ import { ChangeBGFrame } from '../webgpu/webgpu_bgframe.js';
 import * as Animation from '../animation.js'
 import { clips, clips_works, CreateDom, PlayClip, ResetDom } from '../animation_dom.js';
 import { PlayLogo } from '../webgpu/webgpu_logo.js';
+import { PreloadWorks } from './works.js'
 
 let start_time;
 let end_time;
@@ -57,7 +58,7 @@ const dom_logo = CreateDom(logoarea);
 const dom_buttons = [button_hello, button_works, button_diary].map(b => CreateDom(b));
 const dom_bgframe = CreateDom(document.querySelector("#bgframe"));
 const dom_cloud = CreateDom(cloudarea);
-
+PreloadWorks();
 
 
 // ----------------------------------------------------------------------------
