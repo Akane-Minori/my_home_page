@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>作品シーンエディター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<style>
+    body { margin:0; display:flex; height:100vh; font:14px sans-serif; background:#222; color:#eee; }
+    #side { width:300px; padding:12px; box-sizing:border-box; overflow:auto; background:#333; flex:none; }
+    #side h3 { margin:16px 0 4px; font-size:13px; color:#fa9; }
+    #side label { display:block; margin-top:4px; }
+    #side input[type=text], #side select { width:100%; box-sizing:border-box; }
+    #side input[type=number] { width:64px; }
+    #side input[type=color] { vertical-align:middle; }
+    #side button { padding:4px 8px; margin-top:4px; }
+    #side button.on { background:#fa9; }
+    fieldset { border:none; margin:0; padding:0; min-width:0; }
+    .nums { margin-top:4px; }
+    .path { font-size:12px; color:#aaa; word-break:break-all; }
+    #list { max-height:160px; overflow:auto; background:#2a2a2a; }
+    .row { padding:3px 6px; cursor:pointer; }
+    .row.on { background:#fa9; color:#222; }
+    #warn { color:#f88; white-space:pre-wrap; margin-top:10px; }
+
+    #main { flex:1; overflow:auto; padding:20px; }
+    #svg { display:block; touch-action:none; user-select:none;
+           background:repeating-conic-gradient(#3c3c3c 0% 25%, #2e2e2e 0% 50%) 50% / 24px 24px; }
+</style>
+</head>
+<body>
+<div id="side">
+    <h3>ファイル</h3>
+    <button id="save">JSONを保存</button>
+    <label>JSONを読み込む <input type="file" id="load" accept=".json"></label>
+    <label>画像をまとめて読み込む <input type="file" id="imgs" accept="image/*" multiple></label>
+
+    <h3>ページ</h3>
+    <label>高さ <input type="number" data-page="height" step="0.05" min="0.2"> (幅 = 1)</label>
+    <label>隙間 <input type="number" data-page="gap" step="0.005" min="0"></label>
+    <label><input type="checkbox" id="showOrig" checked> 元の形と点を表示(点のドラッグに必要)</label>
+    <label><input type="checkbox" id="showIds" checked> コマの名前を表示</label>
+
+    <h3>編集するもの</h3>
+    <label><input type="radio" name="mode" value="panel" checked> コマ(形・画像)</label>
+    <label><input type="radio" name="mode" value="label"> 文字</label>
+
+    <div id="panelBox">
+        <h3>コマ</h3>
+        <div id="info"></div>
+        <button id="split">分割(辺や点を2回クリック)</button>
+        <label>画像のフォルダ <input type="text" id="imgDir" value="./img/works/"></label>
+        <fieldset id="pfields" disabled>
+            <label>名前 <input type="text" data-pk="id"></label>
+            <div>画像 <input type="file" id="img" accept="image/*"> <button id="clearImg">外す</button></div>
+            <div class="path" id="imgPath"></div>
+            <label>ズーム <input type="number" data-pk="zoom" step="0.05" min="1"></label>
+            <div>背景色 <input type="color" data-pk="color"> <button id="clearColor">なし</button> <span id="colorNote"></span></div>
+        </fieldset>
+    </div>
+
+    <div id="labelBox" hidden>
+        <h3>文字一覧</h3>
+        <div id="list"></div>
+        <div>
+            <button id="add">追加</button>
+            <button id="del">削除</button>
+        </div>
+        <fieldset id="fields" disabled>
+            <h3>文字</h3>
+            <label>文字 <input type="text" data-key="text"></label>
+            <label>どのコマに付けるか <select id="panelSel" data-key="panel"></select></label>
+            <label>基準点 <select data-key="anchor">
+                <option value="top-left">左上</option>
+                <option value="top">上</option>
+                <option value="top-right">右上</option>
+                <option value="left">左</option>
+                <option value="center">中央</option>
+                <option value="right">右</option>
+                <option value="bottom-left">左下</option>
+                <option value="bottom">下</option>
+                <option value="bottom-right">右下</option>
+            </select></label>
+            <label>色 <input type="color" data-key="color"></label>
+            <div class="nums">
+                x <input type="number" data-key="x" step="0.01">
+                y <input type="number" data-key="y" step="0.01">
+            </div>
+            <div class="nums">
+                大きさ <input type="number" data-key="size" step="0.01" min="0.01">
+                回転 <input type="number" data-key="rotate" step="1">
+            </div>
+        </fieldset>
+    </div>
+
+    <h3>操作</h3>
+    <div>
+        <b>コマ</b>: 点をドラッグ(Alt で細かく)<br>
+        選択中のコマ: ドラッグで画像の見せたい位置、ホイールでズーム<br>
+        <b>文字</b>: ドラッグで移動、ホイールで大きさ、Shift+ホイールで回転<br>
+        Ctrl+Z: 元に戻す / Esc: 分割をやめる<br>
+        画像は、「画像のフォルダ」に置いたものを使います。すでにある画像は、そのフォルダを指定すれば使い回せます<br>
+        コマの間とコマの外は透明です(市松模様)。背景色は、コマの絵の下に敷く色です<br>
+        位置と大きさの単位は、ページの幅 = 1.0 です<br>
+        文字の位置は、選んだ基準点の位置です(回転もそこが中心)。フォントは Anton(Google Fonts)です
+    </div>
+
+    <h3>警告</h3>
+    <div id="warn"></div>
+</div>
+
+<div id="main">
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const FONT = 'Anton';
+
+const elMain = document.getElementById('main');
+const elSide = document.getElementById('side');
+const elSvg = document.getElementById('svg');
+const elList = document.getElementById('list');
+const elFields = document.getElementById('fields');
+const elPFields = document.getElementById('pfields');
+const elPanelBox = document.getElementById('panelBox');
+const elLabelBox = document.getElementById('labelBox');
+const elPanelSel = document.getElementById('panelSel');
+const elInfo = document.getElementById('info');
+const elImgPath = document.getElementById('imgPath');
+const elImgDir = document.getElementById('imgDir');
+const elColorNote = document.getElementById('colorNote');
+const elSplit = document.getElementById('split');
+const elShowOrig = document.getElementById('showOrig');
+const elShowIds = document.getElementById('showIds');
+const elWarn = document.getElementById('warn');
+
+let data = NewData();
+let labels = [];
+let mode = 'panel';          // 'panel': コマを編集 / 'label': 文字を編集
+let selPanel = null;         // 選択中のコマの名前
+let sel = -1;                // 選択中の文字の番号
+let splitMode = false;
+let picks = [];
+let drag = null;
+let scale = 500;             // ページ幅 1.0 にあたる長さ(px)
+let lastWheel = 0;
+let lastInput = 0;
+
+const localUrls = {};        // ファイル名 → 読み込んだ画像のURL
+const sizes = {};            // パス → 画像のピクセルサイズ
+const loading = {};
+const undoStack = [];
+
+// ----------------------------------------------------------------------------
+// 小さな道具
+// ----------------------------------------------------------------------------
+function Round4(v) { return Math.round(v * 10000) / 10000; }
+
+function Round1(v) { return Math.round(v * 10) / 10; }
+
+function Pick(v, d) { return v === undefined || v === null ? d : v; }
+
+function Clamp(v, a, b) { return Math.min(Math.max(v, a), b); }
+
+function Snap(v, e) { return e.altKey ? v : Math.round(v / 0.005) * 0.005; }
+
+function El(tag, attrs, parent) {
+    const el = document.createElementNS(NS, tag);
+    const keys = Object.keys(attrs);
+    for (let i = 0; i < keys.length; i++) el.setAttribute(keys[i], attrs[keys[i]]);
+    if (parent) parent.append(el);
+    return el;
+}
+
+function BlurActive() {
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+}
+
+function NewData() {
+    const h = 0.5625;
+    return {
+        height: h,
+        gap: 0.02,
+        points: [[0, 0], [1, 0], [1, h], [0, h]],
+        panels: [{ id: 'p1', points: [0, 1, 2, 3] }],
+    };
+}
+
+function PanelOf(id) {
+    for (let i = 0; i < data.panels.length; i++) {
+        if (data.panels[i].id === id) return data.panels[i];
+    }
+    return null;
+}
+
+// ----------------------------------------------------------------------------
+// 幾何計算(座標は、ページの幅 = 1.0 とした単位。x は右、y は下)
+// ----------------------------------------------------------------------------
+function PanelPoints(d, panel) {
+    const out = [];
+    if (!panel.points) return out;
+    for (let i = 0; i < panel.points.length; i++) out.push(d.points[panel.points[i]]);
+    return out;
+}
+
+function HasMissing(pts) {
+    for (let i = 0; i < pts.length; i++) if (!pts[i]) return true;
+    return false;
+}
+
+function SignedArea(pts) {
+    let a = 0;
+    for (let i = 0; i < pts.length; i++) {
+        const p = pts[i];
+        const q = pts[(i + 1) % pts.length];
+        a += p[0] * q[1] - q[0] * p[1];
+    }
+    return a / 2;
+}
+
+function IsConvex(pts) {
+    let sign = 0;
+    for (let i = 0; i < pts.length; i++) {
+        const a = pts[i];
+        const b = pts[(i + 1) % pts.length];
+        const c = pts[(i + 2) % pts.length];
+        const cross = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+        if (Math.abs(cross) < 1e-9) continue;
+        const s = Math.sign(cross);
+        if (sign === 0) sign = s;
+        else if (s !== sign) return false;
+    }
+    return true;
+}
+
+function Bounds(pts) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let i = 0; i < pts.length; i++) {
+        if (pts[i][0] < x0) x0 = pts[i][0];
+        if (pts[i][0] > x1) x1 = pts[i][0];
+        if (pts[i][1] < y0) y0 = pts[i][1];
+        if (pts[i][1] > y1) y1 = pts[i][1];
+    }
+    return { x0: x0, y0: y0, x1: x1, y1: y1 };
+}
+
+// 各辺を gap の半分だけ内側へずらし、隣り合う辺の交点を新しい頂点にする
+function ShrinkPolygon(pts, gap) {
+    const n = pts.length;
+    const h = gap / 2;
+    const side = SignedArea(pts) > 0 ? 1 : -1;
+
+    const lines = [];
+    for (let i = 0; i < n; i++) {
+        const x1 = pts[i][0], y1 = pts[i][1];
+        const x2 = pts[(i + 1) % n][0], y2 = pts[(i + 1) % n][1];
+        const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+        const dx = (x2 - x1) / len;
+        const dy = (y2 - y1) / len;
+        lines.push({ px: x1 - dy * side * h, py: y1 + dx * side * h, dx: dx, dy: dy });
+    }
+
+    const out = [];
+    for (let i = 0; i < n; i++) {
+        const a = lines[(i + n - 1) % n];
+        const b = lines[i];
+        const cross = a.dx * b.dy - a.dy * b.dx;
+
+        let x, y;
+        if (Math.abs(cross) < 1e-9) {
+            x = b.px;
+            y = b.py;
+        } else {
+            const t = ((b.px - a.px) * b.dy - (b.py - a.py) * b.dx) / cross;
+            x = a.px + a.dx * t;
+            y = a.py + a.dy * t;
+        }
+
+        const ox = pts[i][0], oy = pts[i][1];
+        const dist = Math.hypot(x - ox, y - oy);
+        const limit = h * 4;
+        if (dist > limit) {
+            x = ox + (x - ox) * limit / dist;
+            y = oy + (y - oy) * limit / dist;
+        }
+        out.push([x, y]);
+    }
+    return out;
+}
+
+// コマの中に、絵を「枠を埋める」大きさで置いた位置を返す
+function FitImage(box, imgW, imgH, focus, zoom) {
+    const bw = box.x1 - box.x0;
+    const bh = box.y1 - box.y0;
+    const sc = Math.max(bw / imgW, bh / imgH) * zoom;
+    const w = imgW * sc;
+    const h = imgH * sc;
+
+    let x = (box.x0 + box.x1) / 2 - focus[0] * w;
+    let y = (box.y0 + box.y1) / 2 - focus[1] * h;
+    x = Math.min(Math.max(x, box.x1 - w), box.x0);
+    y = Math.min(Math.max(y, box.y1 - h), box.y0);
+    return { x: x, y: y, w: w, h: h };
+}
+
+function PointsAttr(pts) {
+    const out = [];
+    for (let i = 0; i < pts.length; i++) out.push(pts[i][0] + ',' + pts[i][1]);
+    return out.join(' ');
+}
+
+// コマの点検。問題があれば、メッセージの配列で返す
+function Validate() {
+    const w = [];
+    for (let i = 0; i < data.panels.length; i++) {
+        const p = data.panels[i];
+        const pts = PanelPoints(data, p);
+        if (HasMissing(pts)) { w.push(p.id + ': 存在しない点を使っています'); continue; }
+        if (pts.length < 3) { w.push(p.id + ': 点が3つ未満です'); continue; }
+        if (Math.abs(SignedArea(pts)) < 1e-6) w.push(p.id + ': つぶれています');
+        else if (!IsConvex(pts)) w.push(p.id + ': へこんだ形です');
+    }
+    return w;
+}
+
+// ----------------------------------------------------------------------------
+// 画像
+// ----------------------------------------------------------------------------
+function Base(path) {
+    const k = path.lastIndexOf('/');
+    return k < 0 ? path : path.slice(k + 1);
+}
+
+// 読み込んだファイル名が合えばそれを、なければエディターの1つ上のフォルダからの相対パスで探す
+function Src(path) {
+    const b = Base(path);
+    if (localUrls[b]) return localUrls[b];
+    if (path.indexOf('./') === 0) return '.' + path;
+    return '../' + path;
+}
+
+function OnSizeLoad() {
+    sizes[this.dataset.path] = { w: this.naturalWidth, h: this.naturalHeight };
+    RenderStage();
+}
+
+function OnSizeError() {
+    sizes[this.dataset.path] = { w: 0, h: 0 };
+}
+
+function GetSize(path) {
+    if (sizes[path]) return sizes[path];
+    if (!loading[path]) {
+        loading[path] = true;
+        const im = new Image();
+        im.dataset.path = path;
+        im.onload = OnSizeLoad;
+        im.onerror = OnSizeError;
+        im.src = Src(path);
+    }
+    return null;
+}
+
+function ForgetSizes(name) {
+    const keys = Object.keys(sizes);
+    for (let i = 0; i < keys.length; i++) {
+        if (Base(keys[i]) === name) delete sizes[keys[i]];
+    }
+    const keys2 = Object.keys(loading);
+    for (let i = 0; i < keys2.length; i++) {
+        if (Base(keys2[i]) === name) delete loading[keys2[i]];
+    }
+}
+
+// ----------------------------------------------------------------------------
+// 元に戻す
+// ----------------------------------------------------------------------------
+function Snapshot() {
+    return JSON.stringify({ data: data, labels: labels, selPanel: selPanel, sel: sel });
+}
+
+function PushRaw(s) {
+    undoStack.push(s);
+    if (undoStack.length > 100) undoStack.shift();
+}
+
+function Push() { PushRaw(Snapshot()); }
+
+function Undo() {
+    if (!undoStack.length) return;
+    const s = JSON.parse(undoStack.pop());
+    data = s.data;
+    labels = s.labels;
+    selPanel = s.selPanel;
+    sel = s.sel;
+    splitMode = false;
+    picks = [];
+    Render();
+}
+
+// ----------------------------------------------------------------------------
+// 文字のデータ
+// ----------------------------------------------------------------------------
+
+// 文字の基準点(h: SVG の text-anchor、v: SVG の dominant-baseline)
+const ANCHORS = {
+    'top-left':     { h: 'start',  v: 'text-before-edge' },
+    'top':          { h: 'middle', v: 'text-before-edge' },
+    'top-right':    { h: 'end',    v: 'text-before-edge' },
+    'left':         { h: 'start',  v: 'middle' },
+    'center':       { h: 'middle', v: 'middle' },
+    'right':        { h: 'end',    v: 'middle' },
+    'bottom-left':  { h: 'start',  v: 'text-after-edge' },
+    'bottom':       { h: 'middle', v: 'text-after-edge' },
+    'bottom-right': { h: 'end',    v: 'text-after-edge' },
+};
+
+function NormalizeLabel(s) {
+    return {
+        text: Pick(s.text, 'TEXT'),
+        panel: Pick(s.panel, ''),
+        x: Pick(s.x, 0.5),
+        y: Pick(s.y, Round4(data.height / 2)),
+        anchor: Pick(s.anchor, 'center'),
+        size: Pick(s.size, 0.1),
+        rotate: Pick(s.rotate, 0),
+        color: Pick(s.color, '#ffffff'),
+    };
+}
+
+// ----------------------------------------------------------------------------
+// 描画
+// ----------------------------------------------------------------------------
+function Render() {
+    ApplyMode();
+    RenderList();
+    FillFields();
+    FillPanelFields();
+    FillPageFields();
+    RenderStage();
+    Check();
+}
+
+function ApplyMode() {
+    elPanelBox.hidden = mode !== 'panel';
+    elLabelBox.hidden = mode !== 'label';
+    const radios = elSide.querySelectorAll('input[name="mode"]');
+    for (let i = 0; i < radios.length; i++) radios[i].checked = radios[i].value === mode;
+}
+
+function RenderList() {
+    elList.textContent = '';
+    for (let i = 0; i < labels.length; i++) {
+        const row = document.createElement('div');
+        row.className = 'row' + (i === sel ? ' on' : '');
+        row.dataset.index = i;
+        row.textContent = (i + 1) + '. ' + labels[i].text;
+        elList.append(row);
+    }
+}
+
+function FillPageFields() {
+    const inputs = elSide.querySelectorAll('[data-page]');
+    for (let i = 0; i < inputs.length; i++) inputs[i].value = data[inputs[i].dataset.page];
+}
+
+function FillPanelFields() {
+    const p = selPanel ? PanelOf(selPanel) : null;
+    elPFields.disabled = !p;
+    elInfo.textContent = p ? '選択中: ' + p.id : 'コマをクリックして選んでください';
+
+    const inputs = elPFields.querySelectorAll('[data-pk]');
+    for (let i = 0; i < inputs.length; i++) {
+        const key = inputs[i].dataset.pk;
+        if (!p) inputs[i].value = key === 'color' ? '#ffffff' : '';
+        else if (key === 'zoom') inputs[i].value = Pick(p.zoom, 1);
+        else if (key === 'color') inputs[i].value = p.color || '#ffffff';
+        else inputs[i].value = p[key];
+    }
+    elColorNote.textContent = p && !p.color ? '(なし)' : '';
+    elImgPath.textContent = p && p.img ? p.img : '(画像なし)';
+    elSplit.classList.toggle('on', splitMode);
+}
+
+function FillPanelSelect(current) {
+    elPanelSel.textContent = '';
+    const none = document.createElement('option');
+    none.value = '';
+    none.textContent = '(なし)';
+    elPanelSel.append(none);
+
+    let found = current === '';
+    for (let i = 0; i < data.panels.length; i++) {
+        const op = document.createElement('option');
+        op.value = data.panels[i].id;
+        op.textContent = data.panels[i].id;
+        elPanelSel.append(op);
+        if (data.panels[i].id === current) found = true;
+    }
+    if (!found) {
+        const op = document.createElement('option');
+        op.value = current;
+        op.textContent = current + '(存在しません)';
+        elPanelSel.append(op);
+    }
+}
+
+function FillFields() {
+    elFields.disabled = sel < 0;
+    const g = sel < 0 ? null : labels[sel];
+
+    FillPanelSelect(g ? g.panel : '');
+
+    const inputs = elFields.querySelectorAll('[data-key]');
+    for (let i = 0; i < inputs.length; i++) {
+        const t = inputs[i];
+        if (g) t.value = g[t.dataset.key];
+        else t.value = t.type === 'color' ? '#ffffff' : '';
+    }
+}
+
+function DrawPanels(defs) {
+    const edit = mode === 'panel';
+    const showIds = elShowIds.checked;
+
+    for (let i = 0; i < data.panels.length; i++) {
+        const p = data.panels[i];
+        const pts = PanelPoints(data, p);
+        if (pts.length < 3 || HasMissing(pts)) continue;
+
+        const inner = ShrinkPolygon(pts, data.gap);
+        const shape = PointsAttr(inner);
+        const box = Bounds(inner);
+
+        const size = p.img ? GetSize(p.img) : null;
+        const loaded = size && size.w > 0;
+
+        if (p.color) {
+            El('polygon', { points: shape, fill: p.color }, elSvg);
+        } else if (p.img && !loaded) {
+            El('polygon', { points: shape, fill: '#777' }, elSvg);              // 画像の読み込み中
+        } else if (!p.img) {
+            El('polygon', { points: shape, fill: '#aabbcc', 'fill-opacity': 0.3 }, elSvg);   // 形を見るための目印(保存されない)
+        }
+
+        if (p.img) {
+            if (loaded) {
+                const clip = El('clipPath', { id: 'clip' + i }, defs);
+                El('polygon', { points: shape }, clip);
+                const f = FitImage(box, size.w, size.h, p.focus || [0.5, 0.5], Pick(p.zoom, 1));
+                El('image', {
+                    href: Src(p.img), x: f.x, y: f.y, width: f.w, height: f.h,
+                    'clip-path': 'url(#clip' + i + ')', preserveAspectRatio: 'none',
+                }, elSvg);
+            }
+        }
+
+        if (edit) {
+            const on = p.id === selPanel;
+            El('polygon', {
+                points: shape, fill: 'none', stroke: on ? '#ffaa00' : '#ffffff',
+                'stroke-width': on ? 3 : 1, 'vector-effect': 'non-scaling-stroke', 'pointer-events': 'none',
+            }, elSvg);
+        }
+
+        if (showIds) {
+            const t = El('text', {
+                x: (box.x0 + box.x1) / 2, y: (box.y0 + box.y1) / 2,
+                'font-size': 0.03, fill: '#ffffff', 'fill-opacity': 0.7,
+                'text-anchor': 'middle', 'dominant-baseline': 'middle',
+                'font-family': 'sans-serif', 'pointer-events': 'none',
+            }, elSvg);
+            t.textContent = p.id;
+        }
+    }
+}
+
+// コマを編集するときの、クリック判定・点・分割の目印
+function DrawOverlay() {
+    const showOrig = elShowOrig.checked;
+    const r = 6 / scale;
+
+    for (let i = 0; i < data.panels.length; i++) {
+        const pts = PanelPoints(data, data.panels[i]);
+        if (pts.length < 3 || HasMissing(pts)) continue;
+        const attrs = { 'data-panel': i, points: PointsAttr(pts), fill: 'transparent' };
+        if (showOrig) {
+            attrs.stroke = '#00ffff';
+            attrs['stroke-dasharray'] = '4';
+            attrs['vector-effect'] = 'non-scaling-stroke';
+        }
+        El('polygon', attrs, elSvg);
+    }
+
+    if (showOrig) {
+        for (let i = 0; i < data.points.length; i++) {
+            El('circle', {
+                'data-point': i, cx: data.points[i][0], cy: data.points[i][1], r: r,
+                fill: '#00ffff', stroke: '#000000', 'vector-effect': 'non-scaling-stroke',
+            }, elSvg);
+        }
+    }
+
+    for (let i = 0; i < picks.length; i++) {
+        El('circle', {
+            cx: picks[i].pos[0], cy: picks[i].pos[1], r: r * 1.3,
+            fill: '#ff00ff', 'pointer-events': 'none',
+        }, elSvg);
+    }
+}
+
+// 文字1つぶんの見た目を、データに合わせる(描き直さずに更新できる)
+function StyleLabel(group, l, selected) {
+    const text = group.querySelector('text');
+    text.setAttribute('x', l.x);
+    text.setAttribute('y', l.y);
+    text.setAttribute('font-size', l.size);
+    text.setAttribute('fill', l.color);
+    const a = ANCHORS[l.anchor] || ANCHORS.center;
+    text.setAttribute('text-anchor', a.h);
+    text.setAttribute('dominant-baseline', a.v);
+    text.textContent = l.text;
+    group.setAttribute('transform', 'rotate(' + l.rotate + ' ' + l.x + ' ' + l.y + ')');
+
+    const frame = group.querySelector('rect');
+    if (selected) {
+        const b = text.getBBox();
+        frame.setAttribute('x', b.x);
+        frame.setAttribute('y', b.y);
+        frame.setAttribute('width', b.width);
+        frame.setAttribute('height', b.height);
+        frame.setAttribute('display', 'inline');
+    } else {
+        frame.setAttribute('display', 'none');
+    }
+}
+
+function MakeLabel(i) {
+    const group = El('g', {
+        'data-label': i,
+        'pointer-events': mode === 'label' ? 'auto' : 'none',
+    }, elSvg);
+    El('text', {
+        'font-family': FONT + ', sans-serif', style: 'cursor:move',
+    }, group);
+    El('rect', {
+        fill: 'none', stroke: '#ffaa99', 'stroke-width': 0.003,
+        'stroke-dasharray': '0.01 0.01', 'pointer-events': 'none', display: 'none',
+    }, group);
+    StyleLabel(group, labels[i], mode === 'label' && i === sel);
+}
+
+function RenderStage() {
+    const availW = elMain.clientWidth - 40;
+    const availH = elMain.clientHeight - 40;
+    scale = Math.max(100, Math.min(availW, availH / data.height));
+
+    elSvg.setAttribute('viewBox', '0 0 1 ' + data.height);
+    elSvg.setAttribute('width', scale);
+    elSvg.setAttribute('height', scale * data.height);
+    elSvg.textContent = '';
+
+    const defs = El('defs', {}, elSvg);
+    DrawPanels(defs);
+    for (let i = 0; i < labels.length; i++) MakeLabel(i);
+    if (mode === 'panel') DrawOverlay();
+}
+
+function MarkSelected() {
+    const groups = elSvg.querySelectorAll('g[data-label]');
+    for (let i = 0; i < groups.length; i++) {
+        const idx = Number(groups[i].getAttribute('data-label'));
+        StyleLabel(groups[i], labels[idx], mode === 'label' && idx === sel);
+    }
+}
+
+function Select(i) {
+    sel = i;
+    RenderList();
+    FillFields();
+    MarkSelected();
+}
+
+function Check() {
+    const msgs = Validate();
+    for (let i = 0; i < labels.length; i++) {
+        const name = labels[i].panel;
+        if (name && !PanelOf(name)) msgs.push('文字「' + labels[i].text + '」: コマ ' + name + ' がありません');
+    }
+    elWarn.textContent = msgs.join('\n');
+}
+
+function SetMode(m) {
+    mode = m;
+    splitMode = false;
+    picks = [];
+    Render();
+}
+
+// ----------------------------------------------------------------------------
+// コマの分割
+// ----------------------------------------------------------------------------
+function InsertOnEdge(u, v, pos) {
+    const id = data.points.push(pos) - 1;
+    for (let k = 0; k < data.panels.length; k++) {      // 辺を共有する全部のコマに、同じ点を入れる
+        const L = data.panels[k].points;
+        for (let i = 0; i < L.length; i++) {
+            const a = L[i];
+            const b = L[(i + 1) % L.length];
+            if ((a === u && b === v) || (a === v && b === u)) {
+                L.splice(i + 1, 0, id);
+                break;
+            }
+        }
+    }
+    return id;
+}
+
+function NewId() {
+    let n = data.panels.length + 1;
+    while (PanelOf('p' + n)) n++;
+    return 'p' + n;
+}
+
+function PickSplit(m) {
+    const p = PanelOf(selPanel);
+    if (!p) return;
+    const L = p.points;
+    let best = null;
+
+    for (let k = 0; k < L.length; k++) {                // 点の近く(8px 以内)なら、その点
+        const q = data.points[L[k]];
+        const d = Math.hypot(q[0] - m[0], q[1] - m[1]);
+        if (d < 8 / scale && (!best || d < best.d)) best = { d: d, type: 'vertex', idx: L[k], pos: q };
+    }
+    if (!best) {                                        // 違えば、いちばん近い辺の上
+        for (let k = 0; k < L.length; k++) {
+            const a = data.points[L[k]];
+            const b = data.points[L[(k + 1) % L.length]];
+            const abx = b[0] - a[0];
+            const aby = b[1] - a[1];
+            const t = Clamp(((m[0] - a[0]) * abx + (m[1] - a[1]) * aby) / (abx * abx + aby * aby), 0, 1);
+            const pos = [a[0] + abx * t, a[1] + aby * t];
+            const d = Math.hypot(pos[0] - m[0], pos[1] - m[1]);
+            if (!best || d < best.d) best = { d: d, type: 'edge', a: L[k], b: L[(k + 1) % L.length], pos: pos };
+        }
+    }
+
+    picks.push(best);
+    if (picks.length === 2) {
+        DoSplit();
+        picks = [];
+        splitMode = false;
+    }
+    Render();
+}
+
+function Arc(L, from, to) {
+    const out = [L[from]];
+    let i = from;
+    while (i !== to) {
+        i = (i + 1) % L.length;
+        out.push(L[i]);
+    }
+    return out;
+}
+
+function DoSplit() {
+    const before = Snapshot();
+    const backup = JSON.stringify(data);
+    const p = PanelOf(selPanel);
+
+    const ids = [];
+    for (let k = 0; k < 2; k++) {
+        const pk = picks[k];
+        ids.push(pk.type === 'vertex' ? pk.idx : InsertOnEdge(pk.a, pk.b, pk.pos));
+    }
+    const L = p.points;
+    const ia = L.indexOf(ids[0]);
+    const ib = L.indexOf(ids[1]);
+
+    if (ia < 0 || ib < 0 || ia === ib) {
+        data = JSON.parse(backup);
+        alert('別の辺(または別の点)を選んでください');
+        return;
+    }
+    const A = Arc(L, ia, ib);
+    const B = Arc(L, ib, ia);
+    if (A.length < 3 || B.length < 3) {
+        data = JSON.parse(backup);
+        alert('別の辺(または別の点)を選んでください');
+        return;
+    }
+
+    PushRaw(before);
+    p.points = A;
+    data.panels.push({ id: NewId(), points: B });
+}
+
+function ToggleSplit() {
+    if (!selPanel) return;
+    splitMode = !splitMode;
+    picks = [];
+    Render();
+}
+
+// ----------------------------------------------------------------------------
+// 入力欄
+// ----------------------------------------------------------------------------
+function SetHeight(t) {
+    const h = Math.max(0.2, parseFloat(t.value) || data.height);
+    Push();
+    for (let i = 0; i < data.points.length; i++) {      // 下端の点を一緒に動かす
+        if (Math.abs(data.points[i][1] - data.height) < 1e-6) data.points[i][1] = h;
+    }
+    data.height = h;
+    Render();
+}
+
+// 隙間とコマの背景色は、入力のたびに描き直す(元に戻す記録は、続けて動かしている間は1回だけ)
+function OnSideInput(e) {
+    const t = e.target;
+
+    if (t.dataset.page === 'gap') {
+        const v = parseFloat(t.value);
+        if (isNaN(v) || v < 0) return;
+        if (e.timeStamp - lastInput > 500) Push();
+        lastInput = e.timeStamp;
+        data.gap = v;
+        RenderStage();
+    } else if (t.dataset.pk === 'color') {
+        const p = selPanel ? PanelOf(selPanel) : null;
+        if (!p) return;
+        if (e.timeStamp - lastInput > 500) Push();
+        lastInput = e.timeStamp;
+        p.color = t.value;
+        RenderStage();
+    }
+}
+
+function RenamePanel(p, name) {
+    for (let i = 0; i < labels.length; i++) {
+        if (labels[i].panel === p.id) labels[i].panel = name;
+    }
+    p.id = name;
+    selPanel = name;
+}
+
+function OnPanelField(t) {
+    const p = selPanel ? PanelOf(selPanel) : null;
+    if (!p) return;
+    const key = t.dataset.pk;
+
+    if (key === 'id') {
+        const name = t.value.trim();
+        if (!name || (name !== p.id && PanelOf(name))) { FillPanelFields(); return; }
+        Push();
+        RenamePanel(p, name);
+    } else if (key === 'zoom') {
+        const v = parseFloat(t.value);
+        if (isNaN(v)) { FillPanelFields(); return; }
+        Push();
+        p.zoom = Math.max(1, v);
+    } else if (key === 'color') {
+        p.color = t.value;        // 元に戻す用の記録は、入力中(OnSideInput)に済んでいる
+    }
+    Render();
+}
+
+function OnLabelField(t) {
+    const key = t.dataset.key;
+    if (sel < 0) return;
+
+    if (t.type === 'number') {
+        const v = parseFloat(t.value);
+        if (isNaN(v) || (key === 'size' && v <= 0)) { FillFields(); return; }
+        Push();
+        labels[sel][key] = v;
+    } else {
+        Push();
+        labels[sel][key] = t.value;
+    }
+    Render();
+}
+
+function OnSideChange(e) {
+    const t = e.target;
+    if (t.id === 'showOrig' || t.id === 'showIds') { RenderStage(); return; }
+    if (t.name === 'mode') { SetMode(t.value); return; }
+    if (t.dataset.page === 'height') { SetHeight(t); return; }
+    if (t.dataset.pk) { OnPanelField(t); return; }
+    if (t.dataset.key) { OnLabelField(t); return; }
+}
+
+// 画像を選んだときに JSON へ書くフォルダ(末尾は / にそろえる)
+function ImgDir() {
+    let d = elImgDir.value.trim().replace(/\\/g, '/');
+    if (!d) d = './img/works/';
+    if (d.charAt(d.length - 1) !== '/') d += '/';
+    return d;
+}
+
+function OnPanelImg(e) {
+    const f = e.target.files[0];
+    const p = selPanel ? PanelOf(selPanel) : null;
+    if (!f || !p) return;
+    Push();
+    localUrls[f.name] = URL.createObjectURL(f);
+    ForgetSizes(f.name);
+    p.img = ImgDir() + f.name;
+    p.focus = [0.5, 0.5];
+    p.zoom = 1;
+    e.target.value = '';
+    Render();
+}
+
+function ClearColor() {
+    const p = selPanel ? PanelOf(selPanel) : null;
+    if (!p || !p.color) return;
+    Push();
+    delete p.color;
+    Render();
+}
+
+function ClearImg() {
+    const p = selPanel ? PanelOf(selPanel) : null;
+    if (!p) return;
+    Push();
+    delete p.img;
+    delete p.focus;
+    delete p.zoom;
+    Render();
+}
+
+function OnListClick(e) {
+    const row = e.target.closest('.row');
+    if (row) Select(Number(row.dataset.index));
+}
+
+function AddLabel() {
+    Push();
+    labels.push(NormalizeLabel({}));
+    sel = labels.length - 1;
+    Render();
+}
+
+function RemoveLabel() {
+    if (sel < 0) return;
+    Push();
+    labels.splice(sel, 1);
+    sel = Math.min(sel, labels.length - 1);
+    Render();
+}
+
+// ----------------------------------------------------------------------------
+// ステージの操作
+// ----------------------------------------------------------------------------
+function ToLocal(e) {
+    const r = elSvg.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.width];
+}
+
+function DownPanel(e) {
+    const m = ToLocal(e);
+    const pointAttr = e.target.getAttribute('data-point');
+    const panelAttr = e.target.getAttribute('data-panel');
+    BlurActive();
+
+    if (splitMode && selPanel) {
+        PickSplit(m);
+        return;
+    }
+
+    if (pointAttr !== null) {
+        drag = { kind: 'point', idx: Number(pointAttr), pushed: false };
+        elSvg.setPointerCapture(e.pointerId);
+    } else if (panelAttr !== null) {
+        const p = data.panels[Number(panelAttr)];
+        const was = selPanel === p.id;
+        selPanel = p.id;
+        if (was && p.img) {
+            drag = { kind: 'focus', p: p, last: m, pushed: false };
+            elSvg.setPointerCapture(e.pointerId);
+        }
+        Render();
+    }
+}
+
+function DownLabel(e) {
+    const hit = e.target.closest('g[data-label]');
+    if (!hit) return;
+    const i = Number(hit.getAttribute('data-label'));
+
+    // 入力中の欄があれば確定させる(確定で描き直されるので、その後に要素を探す)
+    BlurActive();
+    const group = elSvg.querySelector('g[data-label="' + i + '"]');
+    if (!group) return;
+
+    if (i !== sel) Select(i);
+
+    const l = labels[i];
+    drag = { kind: 'label', i: i, group: group, x0: e.clientX, y0: e.clientY, ox: l.x, oy: l.y, pushed: false };
+    elSvg.setPointerCapture(e.pointerId);
+    e.preventDefault();
+}
+
+function OnPointerDown(e) {
+    if (e.button !== 0) return;
+    if (mode === 'label') DownLabel(e);
+    else DownPanel(e);
+}
+
+function MovePoint(e) {
+    const m = ToLocal(e);
+    data.points[drag.idx] = [Round4(Clamp(Snap(m[0], e), 0, 1)), Round4(Clamp(Snap(m[1], e), 0, data.height))];
+    RenderStage();
+}
+
+// 画像を動かした向きと逆に、見せたい位置をずらす
+function MoveFocus(e) {
+    const m = ToLocal(e);
+    const p = drag.p;
+    const size = GetSize(p.img);
+    if (!size || size.w <= 0) return;
+
+    const box = Bounds(ShrinkPolygon(PanelPoints(data, p), data.gap));
+    const fc = p.focus || [0.5, 0.5];
+    const f = FitImage(box, size.w, size.h, fc, Pick(p.zoom, 1));
+    p.focus = [
+        Round4(Clamp(fc[0] - (m[0] - drag.last[0]) / f.w, 0, 1)),
+        Round4(Clamp(fc[1] - (m[1] - drag.last[1]) / f.h, 0, 1)),
+    ];
+    drag.last = m;
+    RenderStage();
+}
+
+function MoveLabel(e) {
+    const k = e.altKey ? 0.1 : 1;
+    const l = labels[drag.i];
+    l.x = Round4(drag.ox + (e.clientX - drag.x0) / scale * k);
+    l.y = Round4(drag.oy + (e.clientY - drag.y0) / scale * k);
+    StyleLabel(drag.group, l, true);
+    FillFields();
+}
+
+function OnPointerMove(e) {
+    if (!drag) return;
+    if (!drag.pushed) { Push(); drag.pushed = true; }
+    if (drag.kind === 'point') MovePoint(e);
+    else if (drag.kind === 'focus') MoveFocus(e);
+    else MoveLabel(e);
+}
+
+function OnPointerUp() {
+    if (!drag) return;
+    drag = null;
+    Render();
+}
+
+function WheelPanel(e) {
+    const attr = e.target.getAttribute('data-panel');
+    if (attr === null) return;
+    const p = data.panels[Number(attr)];
+    if (p.id !== selPanel || !p.img) return;
+    e.preventDefault();
+
+    if (e.timeStamp - lastWheel > 500) Push();
+    lastWheel = e.timeStamp;
+    p.zoom = Math.max(1, Round4(Pick(p.zoom, 1) * (e.deltaY < 0 ? 1.05 : 1 / 1.05)));
+    RenderStage();
+    FillPanelFields();
+}
+
+function WheelLabel(e) {
+    const hit = e.target.closest('g[data-label]');
+    if (!hit) return;
+    e.preventDefault();
+
+    const i = Number(hit.getAttribute('data-label'));
+    if (i !== sel) Select(i);
+
+    if (e.timeStamp - lastWheel > 500) Push();
+    lastWheel = e.timeStamp;
+
+    const d = e.deltaY || e.deltaX;
+    const l = labels[i];
+    if (e.shiftKey) {
+        const step = e.altKey ? 0.5 : 2;
+        l.rotate = Round1(l.rotate + (d < 0 ? -step : step));
+    } else {
+        const step = e.altKey ? 1.01 : 1.04;
+        l.size = Round4(l.size * (d < 0 ? step : 1 / step));
+    }
+    StyleLabel(hit, l, true);
+    FillFields();
+}
+
+function OnWheel(e) {
+    if (mode === 'label') WheelLabel(e);
+    else WheelPanel(e);
+}
+
+function OnKey(e) {
+    if (e.key === 'Escape') {
+        splitMode = false;
+        picks = [];
+        Render();
+        return;
+    }
+    if (!(e.ctrlKey || e.metaKey) || e.key !== 'z') return;
+    const tag = e.target.tagName;
+    if (tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (tag === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'file' && e.target.type !== 'radio') return;
+    e.preventDefault();
+    Undo();
+}
+
+// ----------------------------------------------------------------------------
+// 保存と読み込み
+// ----------------------------------------------------------------------------
+function BuildOutput() {
+    const points = [];
+    for (let i = 0; i < data.points.length; i++) {
+        points.push([Round4(data.points[i][0]), Round4(data.points[i][1])]);
+    }
+    const panels = [];
+    for (let i = 0; i < data.panels.length; i++) {
+        const p = data.panels[i];
+        const o = { id: p.id, points: p.points };
+        if (p.color) o.color = p.color;
+        if (p.img) {
+            o.img = p.img;
+            const fc = p.focus || [0.5, 0.5];
+            o.focus = [Round4(fc[0]), Round4(fc[1])];
+            o.zoom = Pick(p.zoom, 1);
+        }
+        panels.push(o);
+    }
+    return {
+        height: data.height,
+        gap: data.gap,
+        points: points,
+        panels: panels,
+        font: FONT,
+        labels: labels,
+    };
+}
+
+function Save() {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(BuildOutput(), null, 4)], { type: 'application/json' }));
+    a.download = 'works.json';
+    a.click();
+}
+
+function SetData(obj) {
+    if (!obj || !Array.isArray(obj.points) || !Array.isArray(obj.panels)) {
+        alert('形式が違います(points と panels が必要です)');
+        return;
+    }
+    const panels = [];
+    for (let i = 0; i < obj.panels.length; i++) {
+        const s = obj.panels[i];
+        const p = { id: s.id, points: s.points };
+        if (s.color) p.color = s.color;
+        if (s.img) {
+            p.img = s.img;
+            p.focus = Pick(s.focus, [0.5, 0.5]);
+            p.zoom = Pick(s.zoom, 1);
+        }
+        panels.push(p);
+    }
+    data = {
+        height: Pick(obj.height, 0.5625),
+        gap: Pick(obj.gap, 0.02),
+        points: obj.points,
+        panels: panels,
+    };
+
+    labels = [];
+    const list = Array.isArray(obj.labels) ? obj.labels : [];
+    for (let i = 0; i < list.length; i++) labels.push(NormalizeLabel(list[i]));
+
+    selPanel = null;
+    sel = labels.length ? 0 : -1;
+    splitMode = false;
+    picks = [];
+    Render();
+}
+
+function ParseLoad(text) {
+    let obj;
+    try {
+        obj = JSON.parse(text);
+    } catch (err) {
+        alert('JSONを読めませんでした');
+        return;
+    }
+    Push();
+    SetData(obj);
+}
+
+function OnLoad(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    f.text().then(ParseLoad);
+    e.target.value = '';
+}
+
+// 保存済みのJSONを開いたあと、画像をまとめて読み込んでプレビューに出す(ファイル名で合わせる)
+function OnImgs(e) {
+    const files = e.target.files;
+    for (let i = 0; i < files.length; i++) {
+        localUrls[files[i].name] = URL.createObjectURL(files[i]);
+        ForgetSizes(files[i].name);
+    }
+    e.target.value = '';
+    Render();
+}
+
+// ----------------------------------------------------------------------------
+// 起動
+// ----------------------------------------------------------------------------
+document.getElementById('save').addEventListener('click', Save);
+document.getElementById('load').addEventListener('change', OnLoad);
+document.getElementById('imgs').addEventListener('change', OnImgs);
+document.getElementById('img').addEventListener('change', OnPanelImg);
+document.getElementById('clearImg').addEventListener('click', ClearImg);
+document.getElementById('clearColor').addEventListener('click', ClearColor);
+document.getElementById('split').addEventListener('click', ToggleSplit);
+document.getElementById('add').addEventListener('click', AddLabel);
+document.getElementById('del').addEventListener('click', RemoveLabel);
+elList.addEventListener('click', OnListClick);
+elSide.addEventListener('change', OnSideChange);
+elSide.addEventListener('input', OnSideInput);
+
+elSvg.addEventListener('pointerdown', OnPointerDown);
+elSvg.addEventListener('pointermove', OnPointerMove);
+elSvg.addEventListener('pointerup', OnPointerUp);
+elSvg.addEventListener('pointercancel', OnPointerUp);
+elSvg.addEventListener('wheel', OnWheel, { passive: false });
+window.addEventListener('keydown', OnKey);
+window.addEventListener('resize', RenderStage);
+
+// 開いたときに ../json/works.json を読む(file:// で開いた場合は、ブラウザに止められるので読まない。JSONを読み込むボタンを使う)
+function ReadResponse(r) {
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+}
+function Ignore() {}
+if (location.protocol !== 'file:') {
+    fetch('../json/works.json').then(ReadResponse).then(SetData).catch(Ignore);
+}
+
+// Anton を読み込んでから描き直す(文字の枠の大きさが変わるため)
+document.fonts.load('1em ' + FONT).then(RenderStage);
+
+Render();
+</script>
+</body>
+</html>
