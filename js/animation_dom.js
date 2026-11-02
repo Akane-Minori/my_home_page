@@ -1,8 +1,6 @@
 import * as Animation from './animation.js';
 
 let dom_count = 0;
-export const clips = await (await fetch('./json/animation_title_hello.json')).json();
-export const clips_works = await (await fetch('./json/animation_title_works.json')).json();
 
 // ----------------------------------------------------------------------------
 // element : 動かすHTML要素
@@ -46,7 +44,10 @@ function ApplyDom(dom, clip)
     const e = dom.element;
     const v = dom.item;
 
-    e.style.transform = `translate(${v.ox}px, ${v.oy}px) ${dom.pre} rotate(${dom.rotate + v.rotAnim}deg) scale(${v.scale})`;
+    // 変形が何も無いときは transform を付けない
+    // (付けると、中の position:fixed の子の基準が、画面からこの要素に変わってしまう)
+    const identity = v.ox === 0 && v.oy === 0 && v.scale === 1 && dom.rotate + v.rotAnim === 0 && dom.pre === "";
+    e.style.transform = identity ? "" : `translate(${v.ox}px, ${v.oy}px) ${dom.pre} rotate(${dom.rotate + v.rotAnim}deg) scale(${v.scale})`;
     e.style.opacity = v.alpha;
 
     // ブラインド(縁取りcanvasがある要素は、canvasの方にマスクを掛ける)

@@ -1,19 +1,10 @@
 import { ChangeBGFrame } from '../webgpu/webgpu_bgframe.js';
 import * as Animation from '../animation.js'
-import { clips, clips_works, CreateDom, PlayClip, ResetDom } from '../animation_dom.js';
+import { CreateDom, ResetDom } from '../animation_dom.js';
 import { PlayLogo } from '../webgpu/webgpu_logo.js';
 import { PreloadWorks } from './works.js'
 
 let start_time;
-let end_time;
-
-let enddone =
-{
-    button: false,
-    logo: false,
-    frame: false,
-    background: false,
-}
 
 const logoarea = document.querySelector("#logo");
 const cloudarea = document.querySelector("#title_cloud");
@@ -66,11 +57,6 @@ PreloadWorks();
 // ----------------------------------------------------------------------------
 export function EnterTitle()
 {
-    enddone.button = false;
-    enddone.logo = false;
-    enddone.frame = false;
-    enddone.background = false;
-    
     ResetDom(dom_logo);
     ResetDom(dom_cloud);
     ResetDom(dom_bgframe);
@@ -146,25 +132,3 @@ function Enter_TickButton(now)
 
 EnterTitle();
 
-
-// ----------------------------------------------------------------------------
-// 退場処理
-// ----------------------------------------------------------------------------
-export function ExitTitle(next)
-{
-    end_time = performance.now();
-    const c = (next === "works") ? clips_works : clips;
-
-    PlayClip([dom_logo], c.title_logo, end_time, () => { enddone.logo = true; });
-    PlayClip(dom_buttons, c.title_buttons, end_time, () => { enddone.button = true; });
-    PlayClip([dom_bgframe, dom_cloud], c.title_bg, end_time, () =>
-    {
-        enddone.frame = true;
-        enddone.background = true;
-    });
-}
-
-export function GetEndDone()
-{
-    return enddone.button && enddone.logo && enddone.frame && enddone.background;
-}

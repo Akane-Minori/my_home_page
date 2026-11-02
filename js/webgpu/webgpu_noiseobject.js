@@ -3,7 +3,6 @@ import { SetupCanvas } from './webgpu_common.js';
 import { CreateNoise } from './webgpu_noise.js';
 
 const context_latte = SetupCanvas(document.querySelector('#noise'));
-const background = document.querySelector('#background');
 
 const noises =
 {
@@ -12,14 +11,12 @@ const noises =
     {
         render: CreateNoise([1.0, 1.0, 1.0], 0.25),
         speed: 1.0,
-        bg: "var(--blue)"
     },
     illusts:
     {
-        render: CreateNoise([0.851, 0.722, 0.659], 0.25),
+        render: CreateNoise([0.851, 0.722, 0.659], 0.25),   // #d9b8a8 (--brown_pale)
         speed: 0.1,
-        bg: "var(--brown)"
-    },   // #d9b8a8 (--brown_pale)
+    },
 };
 let current = noises.title;
 
@@ -43,14 +40,17 @@ function loop(time) {
 running = true;
 requestAnimationFrame(loop);
 
+const noise_canvas = document.querySelector('#noise');
+
 // name: noises のキー。null で止める
 export function SetNoise(name) {
     if (!name) {
         active = false;
+        noise_canvas.style.display = 'none';
         return;
     }
+    noise_canvas.style.display = '';
     current = noises[name];
-    background.style.backgroundColor = current.bg;
     active = true;
     if (!running) {   // すでに回っているときは、二重に始めない
         running = true;
@@ -66,9 +66,9 @@ export function SetNoiseActive(on) {
     }
 }
 
-// 自己紹介の、動かない背景(--orange_pale のノイズを1回だけ描く)
+// 自己紹介の、動かない背景(透明と --white の2色。透明の所は body の背景色 --pink_pale が見える)
 // 非表示のシーンは clientWidth が0なので、画面サイズを渡す
 const context_table = SetupCanvas(document.querySelector('#hello_bg'), window.innerWidth, window.innerHeight);
 
-const RenderTable = CreateNoise([0.594, 0.467, 0.426], 0.1, [10.0, 1000.0]);   // #ac996d
+const RenderTable = CreateNoise([1.0, 0.827, 0.976], 0.1, [10.0, 1000.0]);
 RenderTable(context_table, 100);   // 100 = 模様の選び方。数字を変えると柄が変わる

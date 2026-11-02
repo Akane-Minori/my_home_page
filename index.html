@@ -21,6 +21,7 @@
         <!-- 背景 -->
         <div id="background">
             <canvas id="noise"></canvas>
+            <canvas id="bgframe"></canvas>
         </div>
         <div id="cinemascope_top"></div>
         <div id="cinemascope_bottom"></div>
@@ -31,7 +32,6 @@
          --------------------------------------------------------------------->
         <div class="scene" id="title">
             
-            <canvas id="bgframe"></canvas>
             <img id="title_cloud" src="./img/cloud.webp" alt="">
 
             <div class="titlebutton_area">
@@ -87,11 +87,9 @@
          作品
          --------------------------------------------------------------------->
         <div class="scene" id="works">
-            <div></div>
-            
-            <canvas id="bggrid"></canvas>
+            <div class="works_circle"></div>
             <div id="works_panels"></div>
-            <button id="works_back" data-scene="title">戻る</button>
+            <button class="tmp_back_offset" id="works_back" data-scene="title">戻る</button>
         </div>
 
         <!---------------------------------------------------------------------
@@ -114,7 +112,7 @@
          ゲーム
          --------------------------------------------------------------------->
         <div class="scene" id="games">
-            <button data-scene="works">戻る</button>
+            <button class="tmp_back_offset" data-scene="works">戻る</button>
 
             <div id="games_track"></div>
             <div id="game_card" hidden>
@@ -154,8 +152,7 @@
          音楽
          --------------------------------------------------------------------->
         <div class="scene" id="musics">
-            音楽です<br>
-            <button data-scene="works">戻る</button>
+            <button class="tmp_back_offset" data-scene="works">戻る</button>
         </div>
 
 
@@ -163,8 +160,7 @@
          日記
          --------------------------------------------------------------------->
         <div class="scene" id="diary">
-            日記です<br>
-            <button data-scene="title">戻る</button>
+            <button class="tmp_back_offset" data-scene="title">戻る</button>
         </div>
 
 

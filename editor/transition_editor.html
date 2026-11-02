@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>シーン遷移エディター</title>
+<style>
+:root{--bg:#fff;--fg:#222;--mut:#888;--line:#d8d8d8;--pan:#f3f3f3;--acc:#e0338f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1c1e;--fg:#eee;--mut:#999;--line:#3a3a3c;--pan:#2a2a2c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1c1e;--fg:#eee;--mut:#999;--line:#3a3a3c;--pan:#2a2a2c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0 auto;max-width:1000px;padding:12px;background:var(--bg);color:var(--fg);font:13px/1.6 system-ui,"Hiragino Sans","Yu Gothic",sans-serif}
+section{background:var(--pan);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:10px}
+input,select,button,textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:3px 6px}
+input[type=number]{width:70px}input[type=color]{width:34px;height:26px;padding:1px}button{cursor:pointer}
+#mcw{position:relative;display:inline-block}
+#mcp{position:absolute;top:30px;left:0;z-index:5;background:var(--pan);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 4px 14px #0004}
+#mcc{display:block;width:160px;height:160px;touch-action:none;cursor:crosshair}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+#pvw{position:relative;width:100%;overflow:hidden;border-radius:6px;background:#000}
+#fr{position:absolute;left:0;top:0;width:1280px;height:720px;border:0;transform-origin:0 0;pointer-events:none;background:#fff}
+#sc{flex:1;min-width:120px;padding:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.chip small{color:inherit;opacity:.75}
+.bad{outline:2px solid #d33}
+.row{display:flex;align-items:center;gap:6px;margin:3px 0}.row b{width:58px;font-weight:500;color:var(--mut)}
+.lane{position:relative;flex:1;height:24px;margin:0 8px;background:var(--bg);border:1px solid var(--line);border-radius:4px}
+.head{position:absolute;top:0;bottom:0;width:1px;background:var(--acc);pointer-events:none}
+.key{position:absolute;top:5px;width:12px;height:12px;margin-left:-6px;background:var(--mut);transform:rotate(45deg);border-radius:2px;cursor:ew-resize;touch-action:none}
+.key.on{background:var(--acc)}
+.cap{display:block;margin:6px 0 2px}
+hr{border:0;border-top:1px solid var(--line);margin:10px 0 4px}
+textarea{width:100%;height:240px;box-sizing:border-box;font:12px/1.4 ui-monospace,monospace}
+small{color:var(--mut)}
+</style>
+</head>
+<body>
+
+<section>
+<div class="bar">
+ 遷移 <select id="ts"></select>
+ <select id="tf"></select> → <select id="tt"></select>
+ <button id="tn">新規</button><button id="td">複製</button><button id="tx">削除</button>
+ 長さ(秒) <input id="du" type="number" step="0.1" min="0.05">
+</div>
+<div class="bar" style="margin-top:6px">
+ プレビュー <input id="url" value="../index.html" size="22"> <button id="rl">読み込み</button> <small id="st"></small>
+</div>
+</section>
+
+<section>
+ <div id="pvw"><iframe id="fr" title="プレビュー"></iframe></div>
+ <div class="bar" style="margin-top:6px"><button id="pl">⏯</button><input id="sc" type="range" min="0" max="1" step="0.001" value="0"><span id="tl">0.00</span></div>
+</section>
+
+<section>
+ <div class="chips" id="chips"></div>
+ <div class="bar" style="margin-top:6px"><button id="gn">要素を追加</button><button id="gd">複製</button><button id="gx">削除</button></div>
+ <div id="gs">
+  <div class="bar" style="margin-top:6px">
+   セレクタ <input id="sl" size="34" list="sg" spellcheck="false"> <small id="cn"></small>
+  </div>
+  <div class="bar" style="margin-top:6px">
+   コマ落ちfps(0=なめらか) <input id="fp" type="number" step="1" min="0">
+   基準の変形(pre) <input id="pre" size="18" spellcheck="false"> 基準の回転 <input id="rt" type="number" step="1">°
+   <small>(CreateDom の base と同じ)</small>
+  </div>
+  <div class="bar" style="margin-top:6px">
+   ブラインド 枚数 <input id="bc" type="number" step="1" min="1"> 角度 <input id="ba" type="number" step="5"> <small>(0=横縞 90=縦縞 45=斜め)</small>
+   単色化 色 <span id="mcw"><button id="mcb" type="button" style="width:40px;height:24px"></button><div id="mcp" hidden><canvas id="mcc" width="160" height="160"></canvas><br><input id="mch" size="9" spellcheck="false"></div></span>
+  </div>
+  <div class="bar" style="margin-top:6px">
+   ランダム移動(±の幅) 更新fps <input id="jf" type="number" step="1" min="0"> ox <input id="jx" type="number" step="0.5"> oy <input id="jy" type="number" step="0.5"> rotAnim <input id="jr" type="number" step="0.1"> scale <input id="js" type="number" step="0.01">
+  </div>
+ </div>
+</section>
+
+<section>
+ <small class="cap" style="margin-top:0">背景・ノイズ・格子(要素とは別に、それぞれ独立して動かせます) <span id="fxn"></span></small>
+ <div id="fxlanes"></div>
+ <hr>
+ <small class="cap" id="gcap">要素</small>
+ <div id="lanes"></div>
+ <div id="kp" style="margin-top:6px"></div>
+</section>
+
+<section>
+ <div class="bar" style="margin-bottom:6px"><b>JSON</b><button id="cp">コピー</button><button id="sv">transitions.json を保存</button><button id="ld">この内容を読み込む</button><label>ファイルから <input id="fl" type="file" accept=".json,application/json"></label><small id="ms"></small></div>
+ <textarea id="jt" spellcheck="false"></textarea>
+ <small>編集内容はこのブラウザに自動保存されます。ファイルに反映するときは「保存」で transitions.json を出力してください。</small>
+</section>
+
+<datalist id="sg"></datalist>
+<datalist id="vl"></datalist>
+<datalist id="nl"><option value="title"><option value="illusts"></datalist>
+
+<script>
+const $=id=>document.getElementById(id);
+// blind: 1=全部見える 0=全部隠れる / mono: 0=元の色 1=単色
+const PROPS=['ox','oy','scale','rotAnim','alpha','blind','mono'],DEF={ox:0,oy:0,scale:1,rotAnim:0,alpha:1,blind:1,mono:0},JP=['ox','oy','rotAnim','scale'];
+const SCENES=['title','hello','works','games','illusts','musics','diary'];
+const STORE='transition_editor_v3';
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x)),rd=x=>Math.round(x*1000)/1000;
+const EASE={linear:k=>k,step:k=>k<1?0:1,easeInCubic:k=>k**3,easeOutCubic:k=>1-(1-k)**3,
+ easeInOutCubic:k=>k<.5?4*k**3:1-(-2*k+2)**3/2,
+ easeInBack:k=>2.70158*k**3-1.70158*k*k,
+ easeOutBack:k=>1+2.70158*(k-1)**3+1.70158*(k-1)**2,
+ easeOutBounce:k=>{const n=7.5625,d=2.75;if(k<1/d)return n*k*k;if(k<2/d)return n*(k-=1.5/d)*k+.75;if(k<2.5/d)return n*(k-=2.25/d)*k+.9375;return n*(k-=2.625/d)*k+.984375}};
+
+// ---- データ ----
+// transitions["from>to"] = {
+//   duration,
+//   background:[{t,v}]            背景(CSS の background の値)。キーの時刻にパッと切り替わる
+//   noise:[{t,v}]                 ノイズの名前('' = 非表示)。同上
+//   grid:{pixel,interval,         格子の線の太さと間隔(px)
+//         color:[{t,v}],          色(切り替え)
+//         amount,ox,oy,pixel,interval:[{t,v,ease}]   表示(0〜1)・オフセット(px)・線の太さ(px)・間隔(px)
+//   },
+//   targets:[ { selector, fps, pre, rotate, blindCount, blindAngle, monoColor, jitter, tracks } ]   要素ごとの動き(名前は持たず、セレクタで区別する)
+// }
+const emptyTr=()=>({duration:1,background:[],noise:[],grid:{color:[],amount:[],ox:[],oy:[],pixel:[],interval:[]},targets:[]});
+const fillG=c=>{
+ c.selector=c.selector||'';c.fps=Math.max(0,+c.fps||0);c.pre=c.pre||'';c.rotate=+c.rotate||0;
+ c.blindCount=Math.max(1,Math.round(+c.blindCount)||8);
+ c.blindAngle=c.blindAngle!=null&&c.blindAngle!==''&&isFinite(+c.blindAngle)?+c.blindAngle:45;
+ c.monoColor=c.monoColor||'#ffb200';c.tracks??={};c.jitter??={};return c;
+};
+const stepKeys=a=>(a||[]).map(k=>({t:+k.t,v:String(k.v??'')}));
+const numKeys=a=>(Array.isArray(a)?a:[]).map(k=>({t:+k.t,v:+k.v,ease:k.ease||'linear'}));
+function fromJSON(o){
+ const r={};
+ for(const [n,tr] of Object.entries(o)){
+  if(!/^[a-z]+>[a-z]+$/.test(n))continue;
+  const gr=tr.grid||{};
+  const ts=(Array.isArray(tr.targets)?tr.targets:[]).map(g=>fillG({selector:g.selector,fps:g.fps,pre:g.pre,rotate:g.rotate,blindCount:g.blindCount,blindAngle:g.blindAngle,monoColor:g.monoColor,jitter:g.jitter||{},
+    tracks:Object.fromEntries(Object.entries(g.tracks||{}).map(([p,a])=>[p,numKeys(a)]))}));
+  r[n]={duration:Math.max(.05,+tr.duration||1),background:stepKeys(tr.background),noise:stepKeys(tr.noise),
+   grid:{color:stepKeys(gr.color),amount:numKeys(gr.amount),ox:numKeys(gr.ox),oy:numKeys(gr.oy),pixel:numKeys(gr.pixel),interval:numKeys(gr.interval)},
+   targets:ts};
+ }
+ return r;
+}
+let data={transitions:{}};
+try{const s=localStorage.getItem(STORE);if(s)data.transitions=fromJSON(JSON.parse(s))}catch(e){}
+if(!Object.keys(data.transitions).length)data.transitions={'title>hello':emptyTr()};
+
+let curT=Object.keys(data.transitions)[0],curG=0;
+let sel=null,t=0,playing=true,last=performance.now();
+const TR=()=>data.transitions[curT],G=()=>TR()?.targets[curG];
+
+// 要素に属さないチャンネル(背景・ノイズ・格子)。kind: step=キーの時刻にパッと切り替わる / num=間を補間する
+const FX=[
+ {id:'background',label:'背景',kind:'step',def:'#ffffff',keys:tr=>tr.background},
+ {id:'noise',label:'ノイズ',kind:'step',def:'',keys:tr=>tr.noise},
+ {id:'gcolor',label:'格子色',kind:'step',def:'#ffffff',keys:tr=>tr.grid.color},
+ {id:'gamount',label:'格子表示',kind:'num',def:1,keys:tr=>tr.grid.amount},
+ {id:'gx',label:'格子x',kind:'num',def:0,keys:tr=>tr.grid.ox},
+ {id:'gy',label:'格子y',kind:'num',def:0,keys:tr=>tr.grid.oy},
+ {id:'gpixel',label:'格子太さ',kind:'num',def:1,keys:tr=>tr.grid.pixel},
+ {id:'ginterval',label:'格子間隔',kind:'num',def:100,keys:tr=>tr.grid.interval},
+];
+const usesFx=tr=>tr.noise.length||['color','amount','ox','oy','pixel','interval'].some(p=>tr.grid[p].length);
+
+// 値の計算(キーは時刻順に並べ替えてから使う)
+function ev(keys,tm,def){
+ if(!keys||!keys.length)return def;
+ const k=[...keys].sort((a,b)=>a.t-b.t);
+ if(tm<=k[0].t)return k[0].v;
+ const L=k[k.length-1];if(tm>=L.t)return L.v;
+ let i=0;while(k[i+1].t<=tm)i++;
+ const a=k[i],b=k[i+1];
+ return a.v+(b.v-a.v)*EASE[a.ease||'linear']((tm-a.t)/(b.t-a.t));
+}
+// step: 最後に過ぎたキーの値。最初のキーより前は、最初のキーの値
+function evStep(keys,tm){
+ if(!keys||!keys.length)return undefined;
+ const k=[...keys].sort((a,b)=>a.t-b.t);let v=k[0].v;
+ for(const x of k){if(x.t<=tm+1e-9)v=x.v;else break}
+ return v;
+}
+
+// ---- プレビュー(iframe の中の本物のページを動かす) ----
+const idoc=()=>{try{return $('fr').contentDocument}catch(e){return null}};
+const cache=new Map();   // 要素(target) → { els, svg, matrix, id }  (JSONには入れない)
+let fid=0;
+
+function clear(e){
+ e.style.transform='';e.style.opacity='';e.style.maskImage='';e.style.maskClip='';e.style.filter='';
+ const cv=e.querySelector(':scope > canvas');if(cv)cv.style.maskImage='';
+}
+function release(g){
+ const c=cache.get(g);if(!c)return;
+ c.els.forEach(clear);if(c.svg)c.svg.remove();cache.delete(g);
+}
+function resolve(g){
+ release(g);
+ const d=idoc();let els=[];
+ if(d&&g.selector){try{els=[...d.querySelectorAll(g.selector)]}catch(e){}}
+ cache.set(g,{els,svg:null,matrix:null,id:''});
+ return els.length;
+}
+const resolveAll=()=>{const tr=TR();if(tr)Object.values(tr.targets).forEach(resolve)};
+const releaseAll=tr=>Object.values(tr.targets).forEach(release);
+const count=g=>{const c=cache.get(g);return c?c.els.length:0};
+
+// 遷移に関わる2つのシーンだけを表示する(本番の遷移中と同じ状態)
+function showScenes(){
+ const d=idoc();if(!d)return;
+ const ids=curT.split('>');
+ d.querySelectorAll('.scene').forEach(s=>s.classList.toggle('is-active',ids.includes(s.id)));
+}
+let VARS=[],varSig='';
+function cssVars(d){
+ const s=new Set();
+ const walk=rules=>{
+  for(const r of rules){
+   if(r.styleSheet){try{walk(r.styleSheet.cssRules)}catch(e){}}   // @import(color.css など)
+   else if(r.cssRules&&!r.selectorText)walk(r.cssRules);            // @media など
+   else if(r.selectorText&&/(^|,)\s*(:root|html)\s*(,|$)/.test(r.selectorText))
+    for(const p of r.style)if(p.startsWith('--'))s.add(p);
+  }
+ };
+ for(const sh of d.styleSheets){try{walk(sh.cssRules)}catch(e){}}
+ return [...s];
+}
+// 変数の候補(@import は読み込みが遅れることがあるので、定期的に見直す)
+function suggestVars(){
+ const d=idoc();if(!d)return;
+ const v=cssVars(d),sig=v.join();
+ if(sig===varSig)return;
+ varSig=sig;VARS=v;
+ $('vl').innerHTML=v.map(p=>`<option value="var(${p})">`).join('');
+ if(sel&&sel.kind==='step')panel();
+}
+function suggest(){
+ const d=idoc(),set=new Set();
+ if(d){
+  d.querySelectorAll('[id]').forEach(e=>{if(!e.id.startsWith('ed_'))set.add('#'+e.id)});
+  d.querySelectorAll('[class]').forEach(e=>e.classList.forEach(c=>set.add('.'+c)));
+  suggestVars();
+ }
+ $('sg').innerHTML=[...set].map(s=>`<option value="${s}">`).join('');
+}
+function load(){$('st').textContent='読み込み中…';$('fr').src=$('url').value}
+$('rl').onclick=load;
+$('fr').onload=()=>{
+ const d=idoc();
+ if(!d){$('st').textContent='読み込めません。ローカルサーバー(http://)経由で開いてください';return}
+ $('st').textContent='読み込みました';
+ cache.clear();resetFx(false);loadFx();suggest();showScenes();resolveAll();refresh();
+ setTimeout(suggest,1500);
+};
+function fit(){const s=$('pvw').clientWidth/1280;$('fr').style.transform=`scale(${s})`;$('pvw').style.height=720*s+'px'}
+addEventListener('resize',fit);
+
+// 単色化のSVGフィルタは、要素(target)ごとに1つ作る
+function monoFilter(c,d){
+ if(c.svg)return;
+ const ns='http://www.w3.org/2000/svg';
+ c.svg=d.createElementNS(ns,'svg');c.svg.setAttribute('width','0');c.svg.setAttribute('height','0');c.svg.style.position='absolute';
+ const f=d.createElementNS(ns,'filter');c.id='ed_mono_'+(fid++);f.id=c.id;f.setAttribute('color-interpolation-filters','sRGB');
+ c.matrix=d.createElementNS(ns,'feColorMatrix');c.matrix.setAttribute('type','matrix');
+ f.append(c.matrix);c.svg.append(f);d.body.append(c.svg);
+}
+// animation_dom.js の ApplyDom と同じ計算で、要素に値を掛ける
+function apply(g,v){
+ const c=cache.get(g);if(!c||!c.els.length)return;
+ const d=c.els[0].ownerDocument,w=d.defaultView;
+ const tf=`translate(${v.ox}px, ${v.oy}px) ${g.pre} rotate(${g.rotate+v.rotAnim}deg) scale(${v.scale})`;
+ let fv='none';
+ if(v.mono>0){
+  monoFilter(c,d);
+  const m=Math.min(v.mono,1),n=parseInt(g.monoColor.slice(1),16),r=(n>>16)/255,gg=((n>>8)&255)/255,b=(n&255)/255;
+  c.matrix.setAttribute('values',`${1-m} 0 0 0 ${m*r}  0 ${1-m} 0 0 ${m*gg}  0 0 ${1-m} 0 ${m*b}  0 0 0 1 0`);
+  fv=`url(#${c.id})`;
+ }
+ for(const e of c.els){
+  e.style.transform=tf;e.style.opacity=v.alpha;
+  const cv=w.getComputedStyle(e).getPropertyValue('--pad').trim()?e.querySelector(':scope > canvas'):null;
+  const m=cv??e;
+  if(v.blind>=1)m.style.maskImage='';
+  else{
+   const a=g.blindAngle*Math.PI/180,length=Math.abs(m.offsetWidth*Math.sin(a))+Math.abs(m.offsetHeight*Math.cos(a));
+   const pitch=length/g.blindCount,open=Math.max(v.blind,0)*pitch;
+   if(m===e)e.style.maskClip='no-clip';
+   m.style.maskImage=`repeating-linear-gradient(${g.blindAngle+180}deg, #000 0px, #000 ${open}px, transparent ${open}px, transparent ${pitch}px)`;
+  }
+  e.style.filter=fv;
+ }
+}
+
+// ---- 背景・ノイズ・格子(要素とは独立) ----
+// ページと同じモジュールを、iframe の中で読み込んで直接呼ぶ(index 側の変更は要らない)
+const FXMOD={noise:'js/webgpu/webgpu_noiseobject.js',grid:'js/webgpu/webgpu_bgframe.js'};   // index.html からの相対パス
+let fx=null,fxErr='';   // fx = { SetNoise, ChangeBGFrame }
+async function loadFx(){
+ fx=null;fxErr='';
+ const d=idoc();if(!d)return;
+ const w=d.defaultView,imp=p=>w.eval(`import(${JSON.stringify(new URL(p,d.baseURI).href)})`);
+ try{
+  const [n,g]=await Promise.all([imp(FXMOD.noise),imp(FXMOD.grid)]);
+  fx={SetNoise:n.SetNoise,ChangeBGFrame:g.ChangeBGFrame};
+ }catch(e){fxErr='⚠ ノイズ・格子のモジュールを読み込めません('+e.message+')。FXMOD のパスを確認してください'}
+}
+const fxState={};   // 直前に反映した値
+let fxOrigBg='';
+// 背景を掛ける要素: #background が箱として塗っているならそれ、display:contents なら body
+function bgEl(d){
+ const e=d.querySelector('#background');
+ return e&&d.defaultView.getComputedStyle(e).display!=='contents'?e:d.body;
+}
+function resetFx(restore){
+ const d=idoc();
+ if(restore&&d&&fxState.bgEl&&fxState.bgEl.isConnected)fxState.bgEl.style.background=fxOrigBg;
+ for(const k of Object.keys(fxState))delete fxState[k];
+}
+const cc=document.createElement('canvas');cc.width=cc.height=1;
+const cg=cc.getContext('2d',{willReadFrequently:true});
+function colorOf(s){   // CSS の色(#rrggbb / rgb() / var(--x))を [r,g,b,a](0〜1)にする
+ let str=String(s).trim();
+ const m=/^var\((--[\w-]+)\)$/.exec(str),d=idoc();
+ if(m&&d)str=d.defaultView.getComputedStyle(d.documentElement).getPropertyValue(m[1]).trim()||str;
+ cg.clearRect(0,0,1,1);cg.fillStyle='#000';cg.fillStyle=str;cg.fillRect(0,0,1,1);
+ const p=cg.getImageData(0,0,1,1).data;
+ return [p[0]/255,p[1]/255,p[2]/255,p[3]/255];
+}
+function applyFx(tr,tc){
+ const d=idoc();if(!d)return;
+ let noiseChanged=false;
+ if(fx){
+  // ノイズ: 名前が変わった瞬間に切り替える。空なら止めて、canvas も隠す(止めただけだと最後の絵が残る)
+  const nz=evStep(tr.noise,tc);
+  if(nz!==undefined){
+   if(nz!==fxState.noise){
+    fxState.noise=nz;noiseChanged=true;
+    try{fx.SetNoise(nz||null);fxErr=''}catch(e){fxErr='⚠ ノイズ "'+nz+'" を開始できません('+e.message+')'}
+   }
+   const nc=d.querySelector('#noise');if(nc)nc.style.display=nz?'':'none';
+  }
+  // 格子
+  const g=tr.grid,col=evStep(g.color,tc),am=ev(g.amount,tc),ox=ev(g.ox,tc),oy=ev(g.oy,tc),px=ev(g.pixel,tc),iv=ev(g.interval,tc);
+  if([col,am,ox,oy,px,iv].some(x=>x!==undefined))
+   fx.ChangeBGFrame(colorOf(col??'#ffffff'),Math.max(0,px??1),am??1,Math.max(1,iv??100),[ox??0,oy??0]);
+ }
+ // 背景: SetNoise が #background の色を書き換えるので、必ず最後に掛ける
+ const bg=evStep(tr.background,tc),el=bgEl(d);
+ if(bg!==undefined&&(bg!==fxState.bg||noiseChanged||el!==fxState.bgEl)){
+  if(fxState.bgEl!==el){if(fxState.bgEl&&fxState.bgEl.isConnected)fxState.bgEl.style.background=fxOrigBg;fxOrigBg=el.style.background;fxState.bgEl=el}
+  el.style.background=bg;fxState.bg=bg;
+ }
+}
+
+// 乱数(コマ番号と項目名から決まるので、スクラブしても同じ結果になる)
+function hash(f,p){let h=Math.imul(f+1,374761393)^Math.imul([...p].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7),668265263);h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
+function draw(){
+ const tr=TR();if(!tr)return;
+ const tc=Math.min(t,tr.duration);
+ applyFx(tr,tc);
+ for(const g of Object.values(tr.targets)){
+  const tq=g.fps>0?Math.floor(tc*g.fps+1e-6)/g.fps:tc,v={};
+  for(const p of PROPS)v[p]=ev(g.tracks[p],tq,DEF[p]);
+  const j=g.jitter||{};   // ランダム移動: j.fps ごとに、±幅の範囲でずらす
+  if(j.fps>0){const f=Math.floor(t*j.fps+1e-6);for(const p of JP)if(j[p])v[p]+=(hash(f,p)*2-1)*j[p]}
+  apply(g,v);
+ }
+ $('sc').value=t;$('tl').textContent=t.toFixed(2)+' / '+tr.duration;$('pl').textContent=playing?'⏸':'▶';
+ const x=clamp(t/tr.duration,0,1)*100+'%';document.querySelectorAll('.head').forEach(h=>h.style.left=x);
+}
+function tick(now){
+ requestAnimationFrame(tick);
+ const tr=TR();if(!tr)return;
+ const dt=Math.min((now-last)/1000,.1);last=now;
+ if(playing){t+=dt;if(t>=tr.duration){t=tr.duration;playing=false}}
+ draw();
+}
+// 本番のページは、あとから要素が作られる(作品のコマなど)ので、一致しない要素は定期的に探し直す
+setInterval(()=>{
+ const d=idoc(),tr=TR();if(!d||!tr)return;
+ for(const g of Object.values(tr.targets)){const c=cache.get(g);if(!c||!c.els.length||!c.els[0].isConnected)resolve(g)}
+ chips();suggestVars();const g=G();if(g)showCount(g);
+ const bf=d.querySelector('#bgframe'),gridHidden=tr.grid.amount.length&&bf&&!bf.getClientRects().length;
+ $('fxn').textContent=fxErr||(usesFx(tr)&&!fx?'ノイズ・格子のモジュールを読み込み中…':gridHidden?'⚠ 格子の canvas(#bgframe)が表示されていません(所属シーンが非表示)':'');
+},1000);
+
+// ---- 画面の組み立て ----
+const JM={jf:'fps',jx:'ox',jy:'oy',jr:'rotAnim',js:'scale'};
+function showCount(g){
+ $('cn').textContent=count(g)+'個に一致';
+ $('sl').classList.toggle('bad',!!g.selector&&!count(g));
+}
+let chipSig='';
+function chips(){
+ const tr=TR(),sig=tr.targets.map(g=>g.selector+':'+count(g)).join('|')+'#'+curG;
+ if(sig===chipSig)return;
+ chipSig=sig;
+ const box=$('chips');box.innerHTML='';
+ tr.targets.forEach((g,n)=>{
+  const b=document.createElement('button'),k=count(g);
+  b.className='chip'+(n===curG?' on':'')+(k?'':' bad');
+  b.append((g.selector||'(未設定)')+' ');const s=document.createElement('small');s.textContent=k;b.append(s);
+  b.onclick=()=>{curG=n;sel=null;refresh()};
+  box.append(b);
+ });
+}
+function refresh(){
+ const tr=TR(),g=G();
+ $('ts').innerHTML=Object.keys(data.transitions).map(n=>`<option${n===curT?' selected':''}>${n}</option>`).join('');
+ const [f,to]=curT.split('>'),opt=v=>SCENES.map(s=>`<option${s===v?' selected':''}>${s}</option>`).join('');
+ $('tf').innerHTML=opt(f);$('tt').innerHTML=opt(to);
+ $('du').value=tr.duration;$('sc').max=tr.duration;
+ chipSig='';chips();
+ $('gs').hidden=!g;
+ if(g){
+  $('sl').value=g.selector;$('fp').value=g.fps;$('pre').value=g.pre;$('rt').value=g.rotate;
+  $('bc').value=g.blindCount;$('ba').value=g.blindAngle;setPicker(g.monoColor);
+  for(const [id,p] of Object.entries(JM))$(id).value=(g.jitter||{})[p]||0;
+  showCount(g);
+ }
+ lanes();panel();json();
+}
+
+// 1本のレーン。arr はキーの配列そのもの(編集は直接そこに入る)
+function laneRow(box,label,arr,kind,def){
+ const D=TR().duration;
+ const row=document.createElement('div');row.className='row';row.innerHTML=`<b>${label}</b>`;
+ const lane=document.createElement('div');lane.className='lane';
+ const head=document.createElement('div');head.className='head';lane.append(head);
+ const at=e=>{const r=lane.getBoundingClientRect();return Math.round(clamp((e.clientX-r.left)/r.width,0,1)*D*100)/100};
+ arr.forEach(k=>{
+  const m=document.createElement('div');m.className='key'+(sel&&sel.k===k?' on':'');
+  m.style.left=k.t/D*100+'%';
+  m.onpointerdown=e=>{
+   e.stopPropagation();sel={a:arr,k,kind,label};m.setPointerCapture(e.pointerId);
+   document.querySelectorAll('.key.on').forEach(x=>x.classList.remove('on'));m.classList.add('on');panel();
+   m.onpointermove=ev2=>{k.t=at(ev2);m.style.left=k.t/D*100+'%';panel();json()};
+   m.onpointerup=()=>{m.onpointermove=m.onpointerup=null;arr.sort((a,b)=>a.t-b.t);refresh()};
+  };
+  lane.append(m);
+ });
+ lane.onpointerdown=e=>{if(e.target===lane){playing=false;t=at(e)}};   // クリックで時刻へ移動
+ lane.ondblclick=e=>{                                                  // ダブルクリックでキー追加
+  const tt=at(e);
+  const k=kind==='step'?{t:tt,v:evStep(arr,tt)??def}:{t:tt,v:rd(ev(arr,tt,def)),ease:'linear'};
+  arr.push(k);arr.sort((a,b)=>a.t-b.t);sel={a:arr,k,kind,label};refresh();
+ };
+ row.append(lane);box.append(row);
+}
+function lanes(){
+ const tr=TR(),g=G(),fb=$('fxlanes'),box=$('lanes');fb.innerHTML='';box.innerHTML='';
+ for(const c of FX)laneRow(fb,c.label,c.keys(tr),c.kind,c.def);
+ $('gcap').textContent=g?`要素: ${g.selector||'(未設定)'}`:'要素';
+ if(!g){box.innerHTML='<small>要素がありません。「要素を追加」を押してください</small>';return}
+ for(const p of PROPS)laneRow(box,p,g.tracks[p]??=[],'num',DEF[p]);
+}
+const stepOf=l=>({blind:.05,mono:.05,scale:.05,alpha:.05,'格子表示':.05,'格子太さ':.5,'格子間隔':10})[l]??1;
+function panel(){
+ const el=$('kp');
+ if(!sel){el.innerHTML='<small>ひし形をクリックで選択・ドラッグで時刻移動 / レーンをダブルクリックでキー追加 / レーンをクリックで時刻移動</small>';return}
+ const {a,k,kind,label}=sel;
+ if(kind==='num'){
+  el.innerHTML=`<b>${label}</b> 時刻 <input id="kt" type="number" step="0.01" value="${k.t}"> 値 <input id="kv" type="number" step="${stepOf(label)}" value="${k.v}"> 次のキーまでの曲線 <select id="ke">${Object.keys(EASE).map(n=>`<option${n===(k.ease||'linear')?' selected':''}>${n}</option>`).join('')}</select> <button id="kd">キーを削除</button>`;
+  $('kv').onchange=e=>{k.v=+e.target.value||0;json()};
+  $('ke').onchange=e=>{k.ease=e.target.value;json()};
+ }else{
+  const colorful=label==='背景'||label==='格子色',hexOk=/^#[0-9a-f]{6}$/i.test(k.v);
+  const vsel=colorful&&VARS.length?` <select id="kvs"><option value="">変数を選ぶ</option>${VARS.map(p=>`<option value="var(${p})">${p}</option>`).join('')}</select>`:'';
+  el.innerHTML=`<b>${label}</b> 時刻 <input id="kt" type="number" step="0.01" value="${k.t}"> 値 <input id="kv" size="40" spellcheck="false" list="${label==='ノイズ'?'nl':'vl'}">${vsel}${colorful?` <input id="kc" type="color" value="${hexOk?k.v:'#ffffff'}">`:''} <button id="kd">キーを削除</button> <small>${label==='ノイズ'?'空 = 非表示':'この時刻にパッと切り替わります'}</small>`;
+  $('kv').value=k.v;
+  $('kv').onchange=e=>{k.v=e.target.value.trim();refresh()};
+  if($('kvs'))$('kvs').onchange=e=>{if(e.target.value){k.v=e.target.value;refresh()}};
+  if(colorful)$('kc').oninput=e=>{k.v=e.target.value;$('kv').value=k.v;json()};
+ }
+ $('kt').onchange=e=>{k.t=Math.max(0,+e.target.value||0);a.sort((x,y)=>x.t-y.t);refresh()};
+ $('kd').onclick=delKey;
+}
+function delKey(){if(!sel)return;sel.a.splice(sel.a.indexOf(sel.k),1);sel=null;refresh()}
+addEventListener('keydown',e=>{if(e.key==='Delete'&&!/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))delKey()});
+
+// ---- JSON ----
+const byT=a=>[...a].sort((x,y)=>x.t-y.t);
+const stepOut=a=>byT(a).map(k=>({t:k.t,v:k.v}));
+const numOut=a=>byT(a).map(k=>k.ease&&k.ease!=='linear'?{t:k.t,v:k.v,ease:k.ease}:{t:k.t,v:k.v});
+function out(){
+ const o={};
+ for(const [n,tr] of Object.entries(data.transitions)){
+  const ts=[],e={duration:tr.duration};
+  if(tr.background.length)e.background=stepOut(tr.background);
+  if(tr.noise.length)e.noise=stepOut(tr.noise);
+  const gr=tr.grid,gk={};
+  if(gr.color.length)gk.color=stepOut(gr.color);
+  for(const [name,arr] of [['amount',gr.amount],['ox',gr.ox],['oy',gr.oy],['pixel',gr.pixel],['interval',gr.interval]])if(arr.length)gk[name]=numOut(arr);
+  if(Object.keys(gk).length)e.grid=gk;
+  for(const g of tr.targets){
+   const tracks={},used=p=>g.tracks[p]&&g.tracks[p].length;
+   for(const p of PROPS)if(used(p))tracks[p]=numOut(g.tracks[p]);
+   const x={selector:g.selector};
+   if(g.pre)x.pre=g.pre;
+   if(g.rotate)x.rotate=g.rotate;
+   x.fps=g.fps;
+   if(used('blind')){x.blindCount=g.blindCount;x.blindAngle=g.blindAngle}   // ブラインドを使うときだけ出力
+   if(used('mono'))x.monoColor=g.monoColor;                                  // 単色化を使うときだけ出力
+   x.tracks=tracks;
+   const j=g.jitter||{};
+   if(JP.some(p=>j[p]))x.jitter={fps:j.fps||0,...Object.fromEntries(JP.filter(p=>j[p]).map(p=>[p,j[p]]))};
+   ts.push(x);
+  }
+  e.targets=ts;
+  o[n]=e;
+ }
+ return o;
+}
+// キーの配列は、キー1つにつき1行で出す
+function fmt(v,ind=''){
+ if(v===null||typeof v!=='object')return JSON.stringify(v);
+ const n=ind+' ';
+ const flat=k=>k===null||typeof k!=='object'||('t' in k&&'v' in k);   // キー({t,v})は1行、要素は展開
+ if(Array.isArray(v))return v.length?'[\n'+v.map(k=>n+(flat(k)?JSON.stringify(k):fmt(k,n))).join(',\n')+'\n'+ind+']':'[]';
+ const ks=Object.keys(v);
+ return ks.length?'{\n'+ks.map(k=>n+JSON.stringify(k)+': '+fmt(v[k],n)).join(',\n')+'\n'+ind+'}':'{}';
+}
+function json(){
+ const s=fmt(out());
+ $('jt').value=s;
+ try{localStorage.setItem(STORE,s)}catch(e){}
+}
+function setData(o){
+ const tr=fromJSON(o);
+ if(!Object.keys(tr).length)throw 0;
+ releaseAll(TR());cache.clear();resetFx(true);
+ data.transitions=tr;curT=Object.keys(tr)[0];curG=0;
+ sel=null;t=0;playing=true;showScenes();resolveAll();refresh();
+}
+$('ld').onclick=()=>{try{setData(JSON.parse($('jt').value));$('ms').textContent='読み込みました'}catch(e){$('ms').textContent='JSONを読み込めませんでした'}};
+$('cp').onclick=async()=>{
+ try{await navigator.clipboard.writeText($('jt').value);$('ms').textContent='コピーしました'}
+ catch(e){$('jt').select();$('ms').textContent='選択しました。Ctrl+C でコピーしてください'}
+};
+$('sv').onclick=()=>{
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('jt').value],{type:'application/json'}));
+ a.download='transitions.json';a.click();URL.revokeObjectURL(a.href);
+};
+$('fl').onchange=async e=>{
+ const f=e.target.files[0];if(!f)return;
+ $('jt').value=await f.text();$('ld').click();e.target.value='';
+};
+
+// ---- 遷移の操作 ----
+const freePair=()=>{
+ const f0=curT.split('>')[0];
+ for(const f of [f0,...SCENES])for(const to of SCENES)if(f!==to&&!data.transitions[f+'>'+to])return f+'>'+to;
+ return null;
+};
+function goto(n){
+ releaseAll(TR());resetFx(true);curT=n;curG=0;
+ sel=null;t=0;playing=true;showScenes();resolveAll();refresh();
+}
+$('ts').onchange=e=>goto(e.target.value);
+function renamePair(){
+ const n=$('tf').value+'>'+$('tt').value;
+ if(n===curT)return;
+ if($('tf').value===$('tt').value||data.transitions[n]){$('st').textContent='その組み合わせは使えません';refresh();return}
+ data.transitions=Object.fromEntries(Object.entries(data.transitions).map(([k,v])=>[k===curT?n:k,v]));
+ curT=n;showScenes();refresh();
+}
+$('tf').onchange=$('tt').onchange=renamePair;
+$('tn').onclick=()=>{
+ const n=freePair();if(!n){$('st').textContent='すべての組み合わせがあります';return}
+ data.transitions[n]=emptyTr();goto(n);
+};
+$('td').onclick=()=>{
+ const n=freePair();if(!n){$('st').textContent='すべての組み合わせがあります';return}
+ data.transitions[n]=structuredClone(TR());goto(n);
+};
+$('tx').onclick=()=>{
+ if(Object.keys(data.transitions).length<2)return;
+ releaseAll(TR());delete data.transitions[curT];goto(Object.keys(data.transitions)[0]);
+};
+$('du').onchange=e=>{TR().duration=Math.max(.05,+e.target.value||1);refresh()};
+
+// ---- 要素(target)の操作 ----
+$('gn').onclick=()=>{const ts=TR().targets;ts.push(fillG({}));curG=ts.length-1;sel=null;resolve(G());refresh()};
+$('gd').onclick=()=>{
+ if(!G())return;
+ const ts=TR().targets;ts.splice(curG+1,0,structuredClone(G()));curG++;sel=null;resolve(G());refresh();
+};
+$('gx').onclick=()=>{
+ if(!G())return;
+ const ts=TR().targets;release(G());ts.splice(curG,1);curG=Math.max(0,Math.min(curG,ts.length-1));sel=null;refresh();
+};
+$('sl').onchange=e=>{G().selector=e.target.value.trim();resolve(G());chipSig='';chips();showCount(G());$('gcap').textContent=`要素: ${G().selector||'(未設定)'}`;json()};
+$('fp').onchange=e=>{G().fps=Math.max(0,+e.target.value||0);json()};
+$('pre').onchange=e=>{G().pre=e.target.value.trim();json()};
+$('rt').onchange=e=>{G().rotate=+e.target.value||0;json()};
+$('bc').onchange=e=>{G().blindCount=Math.max(1,Math.round(+e.target.value)||8);e.target.value=G().blindCount;json()};
+$('ba').onchange=e=>{G().blindAngle=+e.target.value||0;e.target.value=G().blindAngle;json()};
+for(const [id,p] of Object.entries(JM))$(id).onchange=e=>{(G().jitter??={})[p]=+e.target.value||0;json()};
+
+// ---- 単色化の色: 色相環と三角形(クリスタ風) ----
+// 三角形は色相に合わせて回る。頂点は 純色 / 白 / 黒
+const pc=$('mcc'),pg=pc.getContext('2d'),N=160,CX=80,R=76,RI=58,RT=54;
+let ph=0,ps=1,pv=1,pm=null;   // 色相・彩度・明度(0〜1)
+function hsv2rgb(h,s,v){const f=n=>{const k=(n+h*6)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};return [f(5),f(3),f(1)].map(x=>Math.round(x*255))}
+function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){if(mx===r)h=((g-b)/d+6)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h/=6}return [h,mx?d/mx:0,mx]}
+const hex=(r,g,b)=>'#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+const tri=()=>[0,4.18879,2.0944].map(a=>[CX+RT*Math.cos(a),CX+RT*Math.sin(a)]);   // [純色(右),白(左上),黒(左下)] 常に右向き
+function weights(p,[A,B,K]){   // 三角形の中での、各頂点の重み
+ const den=(B[1]-K[1])*(A[0]-K[0])+(K[0]-B[0])*(A[1]-K[1]);
+ const a=((B[1]-K[1])*(p[0]-K[0])+(K[0]-B[0])*(p[1]-K[1]))/den;
+ const b=((K[1]-A[1])*(p[0]-K[0])+(A[0]-K[0])*(p[1]-K[1]))/den;
+ return [a,b,1-a-b];
+}
+function paintPicker(){
+ const id=pg.createImageData(N,N),d=id.data,T=tri(),H=hsv2rgb(ph,1,1);
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+  const px=x+.5,py=y+.5,dx=px-CX,dy=py-CX,r=Math.hypot(dx,dy);let c=null;
+  if(r<=R&&r>=RI)c=hsv2rgb(((Math.atan2(dy,dx)/(2*Math.PI))+1)%1,1,1);
+  else{const [a,b,k]=weights([px,py],T);if(a>=0&&b>=0&&k>=0)c=[0,1,2].map(i=>Math.round(H[i]*a+255*b))}
+  if(c){const o=(y*N+x)*4;d[o]=c[0];d[o+1]=c[1];d[o+2]=c[2];d[o+3]=255}
+ }
+ pg.putImageData(id,0,0);
+ const a=ph*2*Math.PI,rm=(R+RI)/2,wa=ps*pv,wb=(1-ps)*pv,wk=1-pv;
+ const mk=(x,y)=>{pg.beginPath();pg.arc(x,y,6,0,7);pg.lineWidth=3;pg.strokeStyle='#fff';pg.stroke();pg.lineWidth=1;pg.strokeStyle='#000';pg.stroke()};
+ mk(CX+rm*Math.cos(a),CX+rm*Math.sin(a));
+ mk(wa*T[0][0]+wb*T[1][0]+wk*T[2][0],wa*T[0][1]+wb*T[1][1]+wk*T[2][1]);
+}
+function pickerApply(){const h=hex(...hsv2rgb(ph,ps,pv));G().monoColor=h;$('mcb').style.background=h;$('mch').value=h;paintPicker();json()}
+function setPicker(h){   // 要素を切り替えたとき・JSONを読み込んだときに呼ぶ
+ const m=/^#?([0-9a-f]{6})$/i.exec(h);if(!m)return;
+ const n=parseInt(m[1],16);[ph,ps,pv]=rgb2hsv(n>>16,n>>8&255,n&255);
+ $('mcb').style.background='#'+m[1];$('mch').value='#'+m[1];paintPicker();
+}
+function pickerMove(e){
+ const r=pc.getBoundingClientRect(),p=[(e.clientX-r.left)*N/r.width,(e.clientY-r.top)*N/r.height];
+ if(pm==='ring')ph=((Math.atan2(p[1]-CX,p[0]-CX)/(2*Math.PI))+1)%1;
+ else{   // 三角形の外に出たら、いちばん近い内側に寄せる
+  let [a,b,k]=weights(p,tri());a=Math.max(0,a);b=Math.max(0,b);k=Math.max(0,k);
+  const s=a+b+k;a/=s;b/=s;pv=a+b;ps=pv>1e-6?a/pv:ps;
+ }
+ pickerApply();
+}
+pc.onpointerdown=e=>{const r=pc.getBoundingClientRect();pm=Math.hypot((e.clientX-r.left)*N/r.width-CX,(e.clientY-r.top)*N/r.height-CX)>=RI?'ring':'tri';pc.setPointerCapture(e.pointerId);pickerMove(e)};
+pc.onpointermove=e=>{if(pm)pickerMove(e)};
+pc.onpointerup=()=>{pm=null};
+$('mch').onchange=e=>{const m=/^#?([0-9a-f]{6})$/i.exec(e.target.value);if(m){G().monoColor='#'+m[1].toLowerCase();setPicker(G().monoColor);json()}};
+$('mcb').onclick=()=>{$('mcp').hidden=!$('mcp').hidden};
+addEventListener('pointerdown',e=>{if(!e.target.closest('#mcw'))$('mcp').hidden=true});
+
+// ---- 再生 ----
+$('pl').onclick=()=>{const tr=TR();if(!playing&&t>=tr.duration)t=0;playing=!playing};
+$('sc').oninput=e=>{playing=false;t=+e.target.value};
+
+fit();load();refresh();requestAnimationFrame(tick);
+</script>
+</body>
+</html>

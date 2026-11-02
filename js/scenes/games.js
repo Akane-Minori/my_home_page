@@ -2,11 +2,6 @@ import { SetSpin } from '../spintext.js';
 import { StartGames, StopGames } from '../webgpu/webgpu_games.js';
 import { CloseCard } from './games_card.js';
 
-let start_time;
-let end_time;
-
-let enddone = false;
-
 // ----------------------------------------------------------------------------
 // ブラインド(帯状のマスク + 単色化)
 // 立ち絵が画面の右端にいるうちは単色ブラインドで、右 1/5 に来るまでに解除される
@@ -94,13 +89,10 @@ function Tick()
 }
 
 // ----------------------------------------------------------------------------
-// イントロ処理
+// 入場時の初期化
 // ----------------------------------------------------------------------------
 export async function EnterGames()
 {
-    enddone = false;
-    start_time = performance.now();
-
     SetSpin("GAMES", 5);
 
     active = true;
@@ -115,24 +107,14 @@ export async function EnterGames()
 
 
 // ----------------------------------------------------------------------------
-// 退場処理
+// 退場後の後始末
 // ----------------------------------------------------------------------------
 export function ExitGames()
 {
-    end_time = performance.now();
-    
     CloseCard();
     SetSpin();
     StopGames();
 
     active = false;
     cancelAnimationFrame(frame);
-
-    // 仮
-    enddone = true;
-}
-
-export function GetEndDone()
-{
-    return enddone;
 }

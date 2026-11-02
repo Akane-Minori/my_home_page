@@ -11,11 +11,6 @@ const FOLLOW = 0.12;        // スクロールの追従の速さ(大きいほど
 const track = document.querySelector('#illusts_track');
 const svg = document.querySelector('#illusts_svg');
 
-let start_time;
-let end_time;
-
-let enddone = false;
-
 let page_height = 0;        // ページの高さ(幅 = 1.0)
 let scroll = 0, target = 0;
 let frame = 0, running = false;
@@ -168,13 +163,10 @@ function Tick()
 }
 
 // ----------------------------------------------------------------------------
-// イントロ処理
+// 入場時の初期化
 // ----------------------------------------------------------------------------
 export async function EnterIllusts()
 {
-    enddone = false;
-    start_time = performance.now();
-
     SetSpin("ILLUSTS", 4);
 
     running = true;
@@ -190,11 +182,10 @@ export async function EnterIllusts()
 
 
 // ----------------------------------------------------------------------------
-// 退場処理
+// 退場後の後始末
 // ----------------------------------------------------------------------------
 export function ExitIllusts()
 {
-    end_time = performance.now();
 
     SetSpin();
 
@@ -203,12 +194,4 @@ export function ExitIllusts()
     window.removeEventListener('wheel', OnWheel);
     ClearEdges();
     CloseIllustCard();
-
-    // 仮
-    enddone = true;
-}
-
-export function GetEndDone()
-{
-    return enddone;
 }

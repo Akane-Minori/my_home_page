@@ -1,4 +1,3 @@
-import { clips_works, CreateDom, PlayClip } from '../animation_dom.js'
 import { ChangeScene } from '../scenechange.js';
 import { PreloadIllusts } from './illusts.js';
 import { PreloadGames } from '../webgpu/webgpu_games.js';
@@ -7,15 +6,12 @@ import { PanelPoints, ShrinkPolygon, Bounds, FitImage, PointsAttr } from './illu
 const NS = 'http://www.w3.org/2000/svg';
 const stage = document.querySelector('#works_panels');
 
-const dom_back = CreateDom(document.querySelector("#works_back"));
-const dom_bg = CreateDom(document.querySelector("#bggrid"));
-
-// コマの名前(works.json の panels の id) → 移動先のシーンと、登場アニメの名前
+// コマの名前(works.json の panels の id) → 移動先のシーン
 // works_editor でコマの名前を変えたら、ここも合わせる
 const TARGETS = {
-    p1: { scene: 'games',   clip: 'works_game' },
-    p2: { scene: 'musics',  clip: 'works_music' },
-    p3: { scene: 'illusts', clip: 'works_illust' },
+    p1: { scene: 'games' },
+    p2: { scene: 'musics' },
+    p3: { scene: 'illusts' },
 };
 
 // 文字の基準点(works_editor と同じ。SVG の text-anchor / dominant-baseline の値)
@@ -31,13 +27,7 @@ const ANCHORS = {
     'bottom-right': { h: 'end',    v: 'text-after-edge' },
 };
 
-const panel_doms = [];      // { dom, clip } 登場アニメを当てる対象
 let ready = null;
-
-let start_time;
-let end_time;
-
-let enddone = false;
 
 // ----------------------------------------------------------------------------
 // 読み込み
@@ -114,6 +104,10 @@ async function BuildPanel(data, panel, index)
         }
     }
 
+    // 縁取り(ホバー時だけ表示。表示切り替えはCSS側)
+    const edge = El('g', { class: 'works_edge' }, svg);
+    El('polygon', { points: shape, class: 'edge_brown' }, edge);
+    El('polygon', { points: shape, class: 'edge_white' }, edge);
     const names = [];
     const labels = data.labels ?? [];
     for (let i = 0; i < labels.length; i++)
@@ -137,7 +131,11 @@ async function BuildPanel(data, panel, index)
     button.append(svg);
 
     const target = TARGETS[panel.id];
-    if (target) button.addEventListener('click', ChangeScene.bind(null, target.scene));
+    if (target)
+    {
+        button.id = `works_${target.scene}`;
+        button.addEventListener('click', ChangeScene.bind(null, target.scene));
+    }
     else console.warn(`works: ${panel.id} の移動先が TARGETS にありません`);
 
     return { button, target };
@@ -158,7 +156,6 @@ async function Build()
         {
             if (!built[i]) continue;
             stage.append(built[i].button);
-            if (built[i].target) panel_doms.push({ dom: CreateDom(built[i].button), clip: built[i].target.clip });
         }
     }
     catch (e)
@@ -175,42 +172,14 @@ export function PreloadWorks()
 }
 
 // ----------------------------------------------------------------------------
-// イントロ処理
+// 入場時の初期化
 // ----------------------------------------------------------------------------
 export async function EnterWorks()
 {
-    enddone = false;
-
     // 先読み(完了は待たない。各シーンに入るときに待つ)
     PreloadIllusts();
     PreloadGames();
 
     await PreloadWorks();
-    start_time = performance.now();
-
-    PlayClip([dom_back], clips_works.works_back, start_time);
-    for (let i = 0; i < panel_doms.length; i++)
-    {
-        PlayClip([panel_doms[i].dom], clips_works[panel_doms[i].clip], start_time);
-    }
-    PlayClip([dom_bg], clips_works.works_bg, start_time);
 }
 
-
-
-// ----------------------------------------------------------------------------
-// 退場処理
-// ----------------------------------------------------------------------------
-export function ExitWorks()
-{
-    
-    end_time = performance.now();
-
-    // 仮
-    enddone = true;
-}
-
-export function GetEndDone()
-{
-    return enddone;
-}

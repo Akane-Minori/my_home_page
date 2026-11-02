@@ -20,8 +20,6 @@ async function InitPage()
 
 
 
-
-
 // 初期化
 {
 

@@ -91,3 +91,20 @@ export function ApplyClip(item, clip, t) {
     }
     return changed;
 }
+
+// ----------------------------------------------------------------------------
+// alpha トラックで、最初に値が変わる時刻(秒)を返す。クリップが無い・変化が無いときは 0
+// step は次のキーの時刻で変わり、それ以外は前のキーから変わり始める
+// ----------------------------------------------------------------------------
+export function AlphaSwitchTime(clip)
+{
+    const keys = clip?.tracks?.alpha;
+    if (!keys) return 0;
+
+    for (let i = 1; i < keys.length; i++)
+    {
+        if (keys[i].v === keys[i - 1].v) continue;
+        return (keys[i - 1].ease === 'step') ? keys[i].t : keys[i - 1].t;
+    }
+    return 0;
+}
