@@ -157,6 +157,7 @@
     position: fixed;
     top: 12vh;
     left: 50%;
+    translate: -50% 0;
     height: 100vh;                 /* 画面の高さ分あるので、下が12vhぶんはみ出る */
     aspect-ratio: 611 / 858;
     transform: translateX(-50%) rotate(-2deg);
@@ -185,16 +186,26 @@
     gap: 16px;
     font-size: 2.4rem;
     color: var(--brown);
+
+    /* 履歴書: 氏名欄(上にふりがなの点線、下に二重線) */
+    padding: 1.8rem 0 0.5rem;
+    border-bottom: 4px double var(--brown);
+    background: repeating-linear-gradient(to right, var(--brown_pale) 0 3px, transparent 3px 7px) 0 1.2rem / 100% 1px no-repeat;
 }
 
-#hello_name button
+#hello_name a
 {
-    top: 0;            /* 共通ルールの top: 30px を打ち消す */
+    display: grid;
+    place-items: center;
     width: 44px;
-    aspect-ratio: 1 / 1;
-    border-radius: 50%;
-    border: 2px solid var(--brown);
-    background-color: transparent;
+    height: 44px;
+}
+
+#hello_name a img
+{
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 #hello_content h1
@@ -204,13 +215,33 @@
     color: var(--brown);
 }
 
-
-
-/* テスト用　戻るボタン下げ */
-.tmp_back_offset
+#hello_content h2
 {
-    position: relative;
-    top: 30px;
+    font-size: 1rem;
+    font-weight: normal;
+    margin: 0 0 8px;
+    color: var(--brown); opacity: 0.5;
+}
+
+
+/* 戻るボタン */
+.back_button
+{
+    position: fixed;        /* シーンの並びに影響しない */
+    top: 30px;              /* シネスコ(30px)の下 */
+    left: 50px;
+    z-index: 10;            /* 立ち絵などより前。カード(50)・シネスコ(100)より後ろ */
+
+    width: 100px;
+    aspect-ratio: 182 / 108;
+
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    outline: none;
+    padding: 0;
+    background: transparent url("../../img/icon/back.webp") center / contain no-repeat;
+    cursor: pointer;
 }
 
 
@@ -589,10 +620,198 @@
 /* ----------------------------------------------------------------------------
 音楽
 ---------------------------------------------------------------------------- */
+#music_player
+{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: min(560px, calc(100vw - 32px));
+    max-height: calc(100vh - 120px);
+    overflow: auto;
+    box-sizing: border-box;
+    padding: 32px;
 
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    background: var(--white);
+    border: 4px solid var(--brown);
+    border-radius: 28px;
+    box-shadow: 10px 10px 0 var(--brown);
+    color: var(--brown);
+    font-family: "Zen Kaku Gothic New", sans-serif;
+}
+
+#music_title   { margin: 0; font-size: 1.8rem; }
+#music_date    { margin: 0; opacity: .55; }
+#music_comment { margin: 0; line-height: 1.7; }
+
+#music_seek
+{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+#music_bar
+{
+    flex: 1;
+    height: 12px;
+    border: 3px solid var(--brown);
+    border-radius: 999px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+#music_bar i
+{
+    display: block;
+    width: 0%;
+    height: 100%;
+    background: var(--green);
+}
+
+#music_controls
+{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+#music_controls button
+{
+    width: 52px;
+    height: 52px;
+    border: 3px solid var(--brown);
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--brown);
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+#music_controls #music_play
+{
+    width: 68px;
+    height: 68px;
+    background: var(--green);
+    font-size: 1.5rem;
+}
+
+#music_download
+{
+    margin-left: auto;
+    padding: 10px 22px;
+    border-radius: 999px;
+    background: var(--brown);
+    color: var(--white);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+#music_list
+{
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+    border-top: 3px double var(--brown);
+}
+
+#music_list li
+{
+    display: flex;
+    gap: 12px;
+    padding: 10px 6px;
+    border-bottom: 1px dashed var(--brown_pale);
+    cursor: pointer;
+}
+
+#music_list li.now
+{
+    background: var(--green_pale);
+    font-weight: 700;
+}
 
 
 
 /* ----------------------------------------------------------------------------
 日記
 ---------------------------------------------------------------------------- */
+#diary_list
+{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: min(560px, calc(100vw - 32px));
+    max-height: calc(100vh - 120px);
+    overflow: auto;
+    box-sizing: border-box;
+    padding: 16px 32px;
+
+    background: var(--white);
+    border: 4px solid var(--pink);
+    border-radius: 28px;
+    box-shadow: 10px 10px 0 var(--pink);
+    color: var(--brown);
+    font-family: "Zen Kaku Gothic New", sans-serif;
+}
+
+.diary_item
+{
+    display: flex;
+    gap: 16px;
+    padding: 14px 4px;
+    border-bottom: 1px dashed var(--pink_pale);
+    cursor: pointer;
+}
+.diary_item:last-child  { border-bottom: none; }
+.diary_item:hover       { background: var(--pink_pale); }
+.diary_item_date        { opacity: .55; white-space: nowrap; }
+.diary_item_title       { font-weight: 700; }
+
+#diary_card
+{
+    position: fixed;
+    inset: 0;
+    z-index: 50;            /* シネスコ(100)より下 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(86, 54, 49, 0.6);
+}
+#diary_card[hidden]     { display: none; }
+
+#diary_card_body
+{
+    width: min(560px, 80vw);
+    max-height: 80vh;
+    overflow: auto;
+    box-sizing: border-box;
+    padding: 32px;
+    background: var(--white);
+    color: var(--brown);
+    font-family: "Zen Kaku Gothic New", sans-serif;
+}
+#diary_card_date        { margin: 0; opacity: .55; }
+
+/* 本文(マークダウン) */
+#diary_card_text        { line-height: 1.8; }
+#diary_card_text > :first-child { margin-top: 0; }
+#diary_card_text > :last-child  { margin-bottom: 0; }
+#diary_card_text h1, #diary_card_text h2, #diary_card_text h3 { margin: 1.4em 0 .5em; line-height: 1.4; }
+#diary_card_text h1 { font-size: 1.4rem; }
+#diary_card_text h2 { font-size: 1.2rem; }
+#diary_card_text h3 { font-size: 1.05rem; }
+#diary_card_text ul, #diary_card_text ol { padding-left: 1.5em; }
+#diary_card_text a    { color: var(--pink); }
+#diary_card_text code { padding: 0 .3em; border-radius: 4px; background: var(--pink_pale); }
+#diary_card_text pre  { padding: 12px; overflow: auto; background: var(--brown); color: var(--white); }
+#diary_card_text pre code { padding: 0; background: none; }
+#diary_card_text blockquote { margin: 1em 0; padding-left: 1em; border-left: 4px solid var(--pink_pale); }
+#diary_card_text figure     { margin: 1.2em 0; text-align: center; }
+#diary_card_text figure img { max-width: 100%; }
+#diary_card_text figcaption { margin-top: .4em; font-size: .9rem; opacity: .6; }

@@ -3,7 +3,7 @@
   "duration": 1,
   "background": [
    {"t":0,"v":"var(--blue)"},
-   {"t":0.5,"v":"var(--pink_pale)"}
+   {"t":0.5,"v":"var(--orange)"}
   ],
   "noise": [
    {"t":0,"v":"title"},
@@ -108,9 +108,6 @@
     "fps": 0,
     "monoColor": "#ffb200",
     "tracks": {
-     "ox": [
-      {"t":0,"v":-50}
-     ],
      "oy": [
       {"t":0.5,"v":400,"ease":"easeOutCubic"},
       {"t":1,"v":0}
@@ -150,6 +147,12 @@
   "noise": [
    {"t":0,"v":""}
   ],
+  "grid": {
+   "amount": [
+    {"t":0,"v":1,"ease":"step"},
+    {"t":0.5,"v":0}
+   ]
+  },
   "targets": [
    {
     "selector": ".works_circle",
@@ -406,7 +409,7 @@
   ]
  },
  "works>illusts": {
-  "duration": 1,
+  "duration": 0.45,
   "background": [
    {"t":0,"v":"var(--pink_pale)"},
    {"t":0.2,"v":"var(--brown)"}
@@ -533,9 +536,9 @@
   ]
  },
  "hello>title": {
-  "duration": 1,
+  "duration": 0.2,
   "background": [
-   {"t":0,"v":"var(--pink_pale)"},
+   {"t":0,"v":"var(--orange)"},
    {"t":0.15,"v":"var(--blue)"}
   ],
   "noise": [
@@ -543,9 +546,15 @@
    {"t":0.15,"v":"title"}
   ],
   "grid": {
+   "color": [
+    {"t":0,"v":"var(--blue_pale)"}
+   ],
    "amount": [
     {"t":0,"v":0,"ease":"step"},
     {"t":0.15,"v":1}
+   ],
+   "oy": [
+    {"t":0,"v":0}
    ],
    "pixel": [
     {"t":0,"v":3}
@@ -604,7 +613,7 @@
     }
    },
    {
-    "selector": "#title",
+    "selector": ".titlebutton",
     "fps": 0,
     "tracks": {
      "alpha": [
@@ -614,7 +623,17 @@
     }
    },
    {
-    "selector": ".titlebutton",
+    "selector": "#logo",
+    "fps": 0,
+    "tracks": {
+     "alpha": [
+      {"t":0,"v":0,"ease":"step"},
+      {"t":0.15,"v":1}
+     ]
+    }
+   },
+   {
+    "selector": "#title_cloud",
     "fps": 0,
     "tracks": {
      "alpha": [
@@ -626,7 +645,7 @@
   ]
  },
  "illusts>works": {
-  "duration": 1,
+  "duration": 0.3,
   "background": [
    {"t":0,"v":"var(--brown)"},
    {"t":0.15,"v":"var(--pink_pale)"}
@@ -694,14 +713,14 @@
      ],
      "mono": [
       {"t":0,"v":1},
-      {"t":0.2,"v":0}
+      {"t":0.25,"v":0}
      ]
     }
    }
   ]
  },
  "games>works": {
-  "duration": 1,
+  "duration": 0.25,
   "background": [
    {"t":0.1,"v":"var(--pink_pale)"}
   ],
@@ -768,5 +787,17 @@
     }
    }
   ]
+ },
+ "works>title": {
+  "duration": 1,
+  "grid": {
+   "ox": [
+    {"t":0,"v":0}
+   ],
+   "oy": [
+    {"t":0,"v":0}
+   ]
+  },
+  "targets": []
  }
 }

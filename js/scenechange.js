@@ -2,6 +2,7 @@ import * as Works from './scenes/works.js';
 import * as Games from './scenes/games.js';
 import * as Illusts from './scenes/illusts.js';
 import * as Musics from './scenes/musics.js';
+import * as Diary from './scenes/diary.js';
 import { SetNoise } from './webgpu/webgpu_noiseobject.js';
 import { ChangeBGFrame } from './webgpu/webgpu_bgframe.js';
 import { PlayLogo } from './webgpu/webgpu_logo.js';
@@ -35,7 +36,7 @@ const scenes =
     hello:
     {
         grid: false,
-        bg: "var(--pink_pale)"
+        bg: "var(--orange)"
     },
     works:
     {
@@ -67,6 +68,8 @@ const scenes =
     },
     diary:
     {
+        enter: Diary.EnterDiary,
+        exit: Diary.ExitDiary,
         grid: false,
         bg: "var(--pink_pale)"
     },

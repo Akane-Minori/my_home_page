@@ -70,5 +70,5 @@ export function SetNoiseActive(on) {
 // 非表示のシーンは clientWidth が0なので、画面サイズを渡す
 const context_table = SetupCanvas(document.querySelector('#hello_bg'), window.innerWidth, window.innerHeight);
 
-const RenderTable = CreateNoise([1.0, 0.827, 0.976], 0.1, [10.0, 1000.0]);
+const RenderTable = CreateNoise([1.0, 0.890, 0.643], 0.3, [10.0, 100.0]);
 RenderTable(context_table, 100);   // 100 = 模様の選び方。数字を変えると柄が変わる

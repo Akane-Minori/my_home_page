@@ -8,7 +8,8 @@
         <!-- フォントのインクルード -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Anton&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+
 
         <!-- cssのインクルード -->
         <link rel="stylesheet" href="./css/mobile/main.css" media="(max-width: 767px)">
@@ -70,14 +71,27 @@
                 <div id="hello_content">
                     <div id="hello_name">
                         安部葉月
-                        <button id="twitter"></button>
-                        <button id="discord"></button>
-                        <button id="pixiv"></button>
+                        <a id="twitter" href="https://twitter.com/abhz27" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                            <img src="img/icon/twitter.webp" alt="">
+                        </a>
+                        <a id="discord" href="https://discord.com/users/1239606591171330101" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+                            <img src="img/icon/discord.webp" alt="">
+                        </a>
+                        <a id="github" href="https://github.com/Akane-Minori" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                            <img src="img/icon/github.webp" alt="">
+                        </a>
                     </div>
                     <br>
                     <div>
+                        <h2>東京工科大クリエイティブスタッフ27年度サークル長</h2>
+                        <h2>早稲田コンピューターエンターテイメント16期部員</h2>
+                        <br>
                         <h1>ゲームとか映像とかをいろいろつくっています</h1>
                         <h1>よろしくおねがいします！</h1>
+                        <br>
+                        <h2>2025年：活動開始</h2>
+                        <h2>2025年：クリエイティブスタッフ入部</h2>
+                        <h2>2026年：WCE入部</h2>
                     </div>
                 </div>
             </div>
@@ -89,7 +103,7 @@
         <div class="scene" id="works">
             <div class="works_circle"></div>
             <div id="works_panels"></div>
-            <button class="tmp_back_offset" id="works_back" data-scene="title">戻る</button>
+            <button class="back_button" id="works_back" data-scene="title" aria-label="戻る"></button>
         </div>
 
         <!---------------------------------------------------------------------
@@ -112,7 +126,7 @@
          ゲーム
          --------------------------------------------------------------------->
         <div class="scene" id="games">
-            <button class="tmp_back_offset" data-scene="works">戻る</button>
+            <button class="back_button" data-scene="works" aria-label="戻る"></button>
 
             <div id="games_track"></div>
             <div id="game_card" hidden>
@@ -152,7 +166,28 @@
          音楽
          --------------------------------------------------------------------->
         <div class="scene" id="musics">
-            <button class="tmp_back_offset" data-scene="works">戻る</button>
+            <button class="back_button" data-scene="works" aria-label="戻る"></button>
+
+            <div id="music_player">
+                <h1 id="music_title"></h1>
+                <p id="music_date"></p>
+                <p id="music_comment"></p>
+            
+                <div id="music_seek">
+                    <span id="music_current">0:00</span>
+                    <div id="music_bar"><i></i></div>
+                    <span id="music_duration">0:00</span>
+                </div>
+            
+                <div id="music_controls">
+                    <button id="music_prev" aria-label="前の曲">⏮</button>
+                    <button id="music_play" aria-label="再生">▶</button>
+                    <button id="music_next" aria-label="次の曲">⏭</button>
+                    <a id="music_download" download>ダウンロード</a>
+                </div>
+            
+                <ul id="music_list"></ul>
+            </div>
         </div>
 
 
@@ -160,7 +195,17 @@
          日記
          --------------------------------------------------------------------->
         <div class="scene" id="diary">
-            <button class="tmp_back_offset" data-scene="title">戻る</button>
+            <button class="back_button" data-scene="title" aria-label="戻る"></button>
+
+            <div id="diary_list"></div>
+
+            <div id="diary_card" hidden>
+                <div id="diary_card_body">
+                    <p id="diary_card_date"></p>
+                    <h2 id="diary_card_title"></h2>
+                    <div id="diary_card_text"></div>
+                </div>
+            </div>
         </div>
 
 
@@ -173,5 +218,8 @@
         <script type="module" src="./js/webgpu/webgpu_logo.js"></script>
         <script type="module" src="./js/webgpu/webgpu_button.js"></script>
         <script type="module" src="./js/webgpu/webgpu_hello.js"></script>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
     </body>
 </html>
