@@ -789,15 +789,177 @@
   ]
  },
  "works>title": {
-  "duration": 1,
+  "duration": 0.35,
+  "background": [
+   {"t":0,"v":"var(--blue)"}
+  ],
   "grid": {
+   "color": [
+    {"t":0,"v":"var(--blue_pale)"}
+   ],
    "ox": [
     {"t":0,"v":0}
    ],
    "oy": [
     {"t":0,"v":0}
+   ],
+   "pixel": [
+    {"t":0,"v":2,"ease":"easeOutCubic"},
+    {"t":0.3,"v":3}
+   ],
+   "interval": [
+    {"t":0,"v":100,"ease":"easeOutCubic"},
+    {"t":0.3,"v":250}
    ]
   },
-  "targets": []
+  "targets": [
+   {
+    "selector": "#works_panels",
+    "fps": 0,
+    "blindCount": 8,
+    "blindAngle": 45,
+    "tracks": {
+     "blind": [
+      {"t":0,"v":1,"ease":"easeOutCubic"},
+      {"t":0.3,"v":0}
+     ]
+    }
+   },
+   {
+    "selector": "#works_back",
+    "fps": 0,
+    "blindCount": 8,
+    "blindAngle": 45,
+    "tracks": {
+     "blind": [
+      {"t":0,"v":1,"ease":"easeOutCubic"},
+      {"t":0.3,"v":0}
+     ]
+    }
+   },
+   {
+    "selector": "#title_cloud",
+    "fps": 0,
+    "blindCount": 8,
+    "blindAngle": 45,
+    "tracks": {
+     "blind": [
+      {"t":0,"v":0,"ease":"easeOutCubic"},
+      {"t":0.3,"v":1,"ease":"easeOutCubic"}
+     ]
+    }
+   },
+   {
+    "selector": ".titlebutton",
+    "fps": 0,
+    "blindCount": 8,
+    "blindAngle": 45,
+    "tracks": {
+     "alpha": [
+      {"t":0,"v":1}
+     ],
+     "blind": [
+      {"t":0,"v":0},
+      {"t":0.3,"v":1,"ease":"easeOutCubic"}
+     ]
+    }
+   }
+  ]
+ },
+ "works>musics": {
+  "duration": 0.35,
+  "background": [
+   {"t":0,"v":"linear-gradient(to bottom, var(--green), var(--green_pale))"}
+  ],
+  "grid": {
+   "amount": [
+    {"t":0,"v":0}
+   ]
+  },
+  "targets": [
+   {
+    "selector": "#works_panels",
+    "fps": 0,
+    "tracks": {
+     "alpha": [
+      {"t":0,"v":1,"ease":"easeOutBack"},
+      {"t":0.3,"v":0}
+     ]
+    }
+   },
+   {
+    "selector": "#works_back",
+    "fps": 0,
+    "tracks": {
+     "alpha": [
+      {"t":0,"v":1,"ease":"easeOutCubic"},
+      {"t":0.3,"v":0}
+     ]
+    }
+   },
+   {
+    "selector": "#musics",
+    "fps": 0,
+    "tracks": {
+     "alpha": [
+      {"t":0,"v":0,"ease":"easeOutCubic"},
+      {"t":0.3,"v":1}
+     ]
+    }
+   },
+   {
+    "selector": "#spin_text",
+    "fps": 0,
+    "monoColor": "#ffb200",
+    "tracks": {
+     "alpha": [
+      {"t":0,"v":1,"ease":"step"},
+      {"t":0.05,"v":0,"ease":"step"},
+      {"t":0.1,"v":1,"ease":"step"},
+      {"t":0.15,"v":0,"ease":"step"},
+      {"t":0.2,"v":2}
+     ],
+     "mono": [
+      {"t":0,"v":1},
+      {"t":0.2,"v":0}
+     ]
+    }
+   }
+  ]
+ },
+ "musics>works": {
+  "duration": 0.1,
+  "targets": [
+   {
+    "selector": "#spin_text",
+    "fps": 0,
+    "monoColor": "#ffb200",
+    "tracks": {
+     "alpha": [
+      {"t":0,"v":1,"ease":"step"},
+      {"t":0.05,"v":0}
+     ],
+     "mono": [
+      {"t":0,"v":1}
+     ]
+    }
+   },
+   {
+    "selector": "#musics",
+    "fps": 0,
+    "blindCount": 8,
+    "blindAngle": 45,
+    "monoColor": "#ffb200",
+    "tracks": {
+     "blind": [
+      {"t":0,"v":1,"ease":"step"},
+      {"t":0.05,"v":0}
+     ],
+     "mono": [
+      {"t":0,"v":1}
+     ]
+    }
+   }
+  ]
  }
 }
