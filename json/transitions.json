@@ -929,6 +929,11 @@
  },
  "musics>works": {
   "duration": 0.1,
+  "grid": {
+   "amount": [
+    {"t":0,"v":1}
+   ]
+  },
   "targets": [
    {
     "selector": "#spin_text",

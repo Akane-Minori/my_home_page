@@ -27,13 +27,17 @@
 {
     position:fixed;
 
-    top: 3vh;
+    --logo-h: calc(100vh - 3vh - var(--logo-bottom, 0px) - 2vh);   /* ボタンの手前までの高さ */
+
+    top: calc((100vh - var(--logo-bottom, 0px)) / 2);   /* 上端〜ボタンの手前の、ちょうど真ん中 */
+    translate: 0 -50%;
+    
     left: 0;
     right: 0;
     margin: 0 auto;
     width: min(80vw, 1000px, calc(var(--logo-h) * 1.53));
 
-    max-height: calc(100vh - 3vh - var(--logo-bottom, 0px) - 2vh);  /* ボタンの手前まで */
+    max-height: var(--logo-h);
     object-fit: contain;
     height: auto;
 }
@@ -230,7 +234,7 @@
     position: fixed;        /* シーンの並びに影響しない */
     top: 30px;              /* シネスコ(30px)の下 */
     left: 50px;
-    z-index: 10;            /* 立ち絵などより前。カード(50)・シネスコ(100)より後ろ */
+    z-index: 102;            /* 立ち絵などより前。カード(50)・シネスコ(100)より後ろ */
 
     width: 100px;
     aspect-ratio: 182 / 108;
@@ -307,8 +311,9 @@
 
 .works_circle {
     position: fixed;
-    inset: 0;
-    margin: auto;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
     transform: scale(0);
 
     width: 100vmax;
@@ -331,8 +336,8 @@
     left:50%;
     top:50%;
     translate:-50% -50%;
-    width:150vw;
-    height:150vw;
+    width:max(150vw, 160vh);
+    height:max(150vw, 160vh);
     overflow:visible;
 
     z-index:101;

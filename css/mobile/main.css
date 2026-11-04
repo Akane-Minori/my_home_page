@@ -1,2 +1,18 @@
 @import "../pc/main.css";
 @import "../color.css";
+
+/* hello: 戻るボタン（コーヒー）を紙に重ねる */
+#hello_backbutton
+{
+    top: -40px;
+    left: -36px;
+    width: 240px;
+}
+
+/* hello: 紙を画面幅に収める */
+#hello_paper
+{
+    width: 94vw;
+    height: auto;
+    top: 130px;
+}

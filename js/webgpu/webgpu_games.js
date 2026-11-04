@@ -106,10 +106,29 @@ export function PreloadGames() {
     return ready;
 }
 
+
+// ----------------------------------------------------------------------------
+// スクロール処理
+// ----------------------------------------------------------------------------
 function OnWheel(e) {
     if (IsCardOpen()) return;
     const max = Math.max(0, (extent + MARGIN) * window.innerHeight - window.innerWidth);
     target = Math.min(Math.max(target + e.deltaY + e.deltaX, 0), max);
+}
+
+let touch_x = 0, touch_y = 0;
+
+function OnTouchStart(e) {
+    touch_x = e.touches[0].clientX;
+    touch_y = e.touches[0].clientY;
+}
+
+function OnTouchMove(e) {
+    const t = e.touches[0];
+    const d = (touch_x - t.clientX) + (touch_y - t.clientY);
+    touch_x = t.clientX;
+    touch_y = t.clientY;
+    OnWheel({ deltaX: d, deltaY: 0 });
 }
 
 function Tick() {
@@ -126,6 +145,8 @@ export async function StartGames() {
 
     scroll = target = 0;
     window.addEventListener('wheel', OnWheel);
+    window.addEventListener('touchstart', OnTouchStart);
+    window.addEventListener('touchmove', OnTouchMove);
     frame = requestAnimationFrame(Tick);
 }
 
@@ -133,4 +154,6 @@ export function StopGames() {
     running = false;
     cancelAnimationFrame(frame);
     window.removeEventListener('wheel', OnWheel);
+    window.removeEventListener('touchstart', OnTouchStart);
+    window.removeEventListener('touchmove', OnTouchMove);
 }

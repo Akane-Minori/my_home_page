@@ -155,6 +155,16 @@ function OnWheel(e)
     target = Math.min(Math.max(target + e.deltaY, 0), ScrollMax());
 }
 
+let touch_y = 0;
+
+function OnTouchStart(e) { touch_y = e.touches[0].clientY; }
+
+function OnTouchMove(e) {
+    const y = e.touches[0].clientY;
+    OnWheel({ deltaY: touch_y - y });
+    touch_y = y;
+}
+
 function Tick()
 {
     scroll += (target - scroll) * FOLLOW;
@@ -176,6 +186,8 @@ export async function EnterIllusts()
     scroll = target = 0;
     track.style.transform = '';
     window.addEventListener('wheel', OnWheel);
+    window.addEventListener('touchstart', OnTouchStart);
+    window.addEventListener('touchmove', OnTouchMove);
     frame = requestAnimationFrame(Tick);
 }
 
@@ -192,6 +204,8 @@ export function ExitIllusts()
     running = false;
     cancelAnimationFrame(frame);
     window.removeEventListener('wheel', OnWheel);
+    window.removeEventListener('touchstart', OnTouchStart);
+    window.removeEventListener('touchmove', OnTouchMove);
     ClearEdges();
     CloseIllustCard();
 }

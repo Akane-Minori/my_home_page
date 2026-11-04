@@ -10,7 +10,7 @@ const BLIND_START = 0.8;                // 画面の幅に対する位置。こ�
 const BLIND_MIN = 0.3;                  // 右端での帯の開き具合(0: 全部閉じて見えない、1: 全部開く)
 const BLIND_COUNT = 8;                  // 帯の数
 const BLIND_ANGLE = 45;                 // 帯の角度
-const BLIND_COLOR = [1.0, 0.129, 0.675]; // 単色の色(--pink)
+const BLIND_COLOR = [1.0, 0.698, 0.0]; // 単色の色(--pink)
 
 let items = [];             // 立ち絵ごとの { element, canvas, filter, matrix, last }
 let filter_count = 0;
