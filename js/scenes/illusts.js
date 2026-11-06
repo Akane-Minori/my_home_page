@@ -1,5 +1,5 @@
 import { SetSpin } from '../spintext.js';
-import { PanelPoints, ShrinkPolygon, Bounds, FitImage, PointsAttr } from './illusts_panel.js';
+import { PanelPoints, ShrinkPolygon, Bounds, FitImage, PointsAttr, AssignIllusts } from './illusts_panel.js';
 import { OpenIllustCard, CloseIllustCard, IsIllustCardOpen, ThumbPath } from './illusts_card.js';
 import { ChangeScene } from '../scenechange.js';
 
@@ -16,7 +16,7 @@ let scroll = 0, target = 0;
 let frame = 0, running = false;
 
 // ----------------------------------------------------------------------------
-// コマ割りの組み立て(json/illusts.json は、コマ割りエディターで作る)
+// コマ割りの組み立て(json/illusts.json = コマの形、json/illusts_list.json = 絵の一覧。どちらもコマ割りエディターで作る)
 // ----------------------------------------------------------------------------
 function El(name, attrs, parent)
 {
@@ -58,6 +58,8 @@ async function Build()
     try
     {
         const data = await (await fetch('./json/illusts.json')).json();
+        const list = await (await fetch('./json/illusts_list.json')).json();
+        const assigned = AssignIllusts(data, list);     // コマの id → 絵
         const gap = data.gap ?? 0.02;
         page_height = data.height;
 
@@ -69,8 +71,11 @@ async function Build()
         const edges = El('g', {}, svg);     // ホバーの縁取り(絵より手前)
         const hits = El('g', {}, svg);      // 当たり判定(いちばん手前)
 
-        const jobs = data.panels.map(async (panel, i) =>
+        const jobs = data.panels.map(async (shape_panel, i) =>
         {
+            // コマ割り側の絵の情報は無視して、一覧から割り当てた絵を使う
+            const { img: _i, date: _d, comment: _c, focus: _f, zoom: _z, ...base } = shape_panel;
+            const panel = { ...base, ...assigned.get(shape_panel.id) };
             const inner = ShrinkPolygon(PanelPoints(data, panel), gap);
             const shape = PointsAttr(inner);
             const box = Bounds(inner);
@@ -209,3 +214,4 @@ export function ExitIllusts()
     ClearEdges();
     CloseIllustCard();
 }
+

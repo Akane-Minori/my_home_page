@@ -122,6 +122,24 @@ export function FitImage(box, imgW, imgH, focus = [0.5, 0.5], zoom = 1)
     return { x, y, w, h };
 }
 
+// 絵の一覧を、コマに自動で割り当てる(エディターの Assign と同じ規則にしておくこと)
+//   絵 : 作成日の新しい順(同じ日は一覧の順)
+//   コマ: 上から下、同じ高さなら左から右。back のコマは除く
+//   戻り値: コマの id → 絵 の Map(コマより絵が多ければ、古い絵は入らない)
+export function AssignIllusts(data, list)
+{
+    const sorted = [...list].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+    const slots = data.panels
+        .filter(p => !p.back && p.points.length >= 3 && PanelPoints(data, p).every(Boolean))
+        .map(p => ({ p, b: Bounds(PanelPoints(data, p)) }))
+        .sort((a, b) => (Math.round(a.b.y0 * 100) - Math.round(b.b.y0 * 100)) || (a.b.x0 - b.b.x0))
+        .map(o => o.p);
+
+    const map = new Map();
+    slots.forEach((p, i) => { if (sorted[i]) map.set(p.id, sorted[i]); });
+    return map;
+}
+
 // SVG の points 属性の文字列にする
 export function PointsAttr(pts)
 {

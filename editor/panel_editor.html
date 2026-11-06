@@ -18,9 +18,11 @@
 <body>
 <div id="side">
     <h3>ファイル</h3>
-    <button id="save">JSONを保存</button>
-    <input type="file" id="load" accept=".json">
-    <label>画像をまとめて読み込む <input type="file" id="imgs" accept="image/*" multiple></label>
+    <button id="save">コマ割りを保存 (illusts.json)</button>
+    <label>コマ割りを開く <input type="file" id="load" accept=".json"></label>
+    <button id="saveList">絵の一覧を保存 (illusts_list.json)</button>
+    <label>絵の一覧を開く <input type="file" id="loadList" accept=".json"></label>
+    <label>画像をまとめて読み込む(プレビュー用) <input type="file" id="imgs" accept="image/*" multiple></label>
 
     <h3>全体</h3>
     <label>高さ <input type="number" id="height" step="0.1" min="1" style="width:70px"> (幅 = 1)</label>
@@ -29,16 +31,19 @@
 
     <h3>コマ</h3>
     <button id="split">分割(辺の上を2回クリック)</button>
+    <label><input type="checkbox" id="back"> 戻るボタンにする</label>
     <div id="info"></div>
-    <label>画像 <input type="file" id="img" accept="image/*"></label>
-    <button id="clearImg">画像を外す</button>
+
+    <h3>絵の一覧(新しい順 / ×は表示されない絵)</h3>
+    <label>画像を追加 <input type="file" id="add" accept="image/*" multiple></label>
+    <select id="ilist" size="8" style="width:100%"></select>
+    <button id="remove">一覧から外す</button>
     <label>作成日 <input type="date" id="date"></label>
     <label>一言コメント<br><textarea id="comment" rows="3" style="width:100%;box-sizing:border-box"></textarea></label>
     <label>ズーム <input type="number" id="zoom" step="0.05" min="1" style="width:70px"></label>
-    <label><input type="checkbox" id="back"> 戻るボタンにする</label>
 
     <h3>操作</h3>
-    <div>点: ドラッグ(Alt で細かく)<br>選択中のコマ: ドラッグで見せたい位置、ホイールでズーム<br>Ctrl+Z: 元に戻す / Esc: 分割をやめる</div>
+    <div>点: ドラッグ(Alt で細かく)<br>絵は、上から下・左から右のコマへ、新しい順に自動で入る<br>選択中の絵: ドラッグで見せたい位置、ホイールでズーム<br>Ctrl+Z: 元に戻す / Esc: 分割をやめる</div>
 
     <h3>警告</h3>
     <div id="warn"></div>
@@ -171,13 +176,47 @@ let history = [];
 let drag = null;
 const localUrls = {};       // 画像のパス → ブラウザ内の URL
 const imgCache = {};
+let list = [];              // 絵の一覧(illusts_list.json)
+let selectedIllust = null;  // 選択中の絵(一覧の要素そのもの)
+let assign = null;          // 今の割り当て結果(Render のたびに作り直す)
 
 const panelOf = (id) => data.panels.find(p => p.id === id);
 const gapValue = () => +$('gap').value || 0;
 
 // ---------------------------------------------------------------- 元に戻す
-function Push() { history.push(JSON.stringify(data)); if (history.length > 100) history.shift(); }
-function Undo() { if (history.length) { data = JSON.parse(history.pop()); Render(); } }
+function Snapshot() { return JSON.stringify({ data, list, si: list.indexOf(selectedIllust) }); }
+function Restore(s) { const o = JSON.parse(s); data = o.data; list = o.list; selectedIllust = list[o.si] ?? null; }
+function Push() { history.push(Snapshot()); if (history.length > 100) history.shift(); }
+function Undo() { if (history.length) { Restore(history.pop()); Render(); } }
+
+// ---------------------------------------------------------------- 絵の自動割り当て
+// 絵: 作成日の新しい順 / コマ: 上から下、同じ高さなら左から右(back のコマは除く)
+// この規則は、サイト側(illusts.js)と同じにしておくこと
+const Name = (path) => path.split('/').pop();
+const DateStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+function SlotPanels() {
+    return data.panels
+        .filter(p => !p.back && p.points.length >= 3 && PanelPoints(data, p).every(Boolean))
+        .map(p => ({ p, b: Bounds(PanelPoints(data, p)) }))
+        .sort((a, b) => (Math.round(a.b.y0 * 100) - Math.round(b.b.y0 * 100)) || (a.b.x0 - b.b.x0))
+        .map(o => o.p);
+}
+
+function Assign() {
+    const sorted = [...list].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+    const slots = SlotPanels();
+    const map = new Map();      // コマの id → 絵
+    slots.forEach((p, i) => { if (sorted[i]) map.set(p.id, sorted[i]); });
+    return { sorted, slots, map };
+}
+
+// 選択中の絵が入っているコマを、選択中のコマにする
+function SyncSelection() {
+    if (!selectedIllust) return;
+    const hit = [...assign.map].find(([, it]) => it === selectedIllust);
+    selected = hit ? hit[0] : null;
+}
 
 // ---------------------------------------------------------------- 画像
 function GetImg(path) {
@@ -185,13 +224,15 @@ function GetImg(path) {
         const el = new Image();
         const c = imgCache[path] = { el, ok: false, w: 1, h: 1 };
         el.onload = () => { c.ok = true; c.w = el.naturalWidth; c.h = el.naturalHeight; Render(); };
-        el.src = localUrls[path] ?? path;
+        el.src = localUrls[path] ?? ('.' + path);   // editor/ の1つ上のフォルダから読む
     }
     return imgCache[path];
 }
 
 // ---------------------------------------------------------------- 描画
 function Render() {
+    assign = Assign();
+    SyncSelection();
     const gap = gapValue();
     const r = 6 / WPX;
     const edit = $('showOrig').checked;
@@ -208,10 +249,11 @@ function Render() {
         if (p.back) {
             body += `<polygon points="${shape}" fill="#ff21ac"/>`;
             body += `<text x="${(box.x0 + box.x1) / 2}" y="${(box.y0 + box.y1) / 2}" font-size="0.06" fill="#fff" text-anchor="middle" dominant-baseline="middle">戻る</text>`;
-        } else if (p.img) {
-            const im = GetImg(p.img);
+        } else if (assign.map.has(p.id)) {
+            const ill = assign.map.get(p.id);
+            const im = GetImg(ill.img);
             if (im.ok) {
-                const f = FitImage(box, im.w, im.h, p.focus ?? [0.5, 0.5], p.zoom ?? 1);
+                const f = FitImage(box, im.w, im.h, ill.focus ?? [0.5, 0.5], ill.zoom ?? 1);
                 body += `<image href="${im.el.src}" x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" preserveAspectRatio="none" clip-path="url(#c${i})"/>`;
             } else {
                 body += `<polygon points="${shape}" fill="#777"/>`;
@@ -243,15 +285,35 @@ function Render() {
 
 function UpdateSide() {
     const p = selected && panelOf(selected);
-    $('info').textContent = p ? `選択中: ${p.id}` : 'コマを選んでください';
-    $('zoom').value = p?.zoom ?? 1;
+    const ill = selectedIllust;
+    if (p) $('info').textContent = `選択中: ${p.id}` + (p.back ? '(戻る)' : ill ? ` / ${Name(ill.img)}` : '(絵なし)');
+    else $('info').textContent = ill ? `選択中: ${Name(ill.img)}(コマに入っていません)` : 'コマを選んでください';
+
+    $('zoom').value = ill?.zoom ?? 1;
     $('back').checked = !!p?.back;
-    $('date').disabled = $('comment').disabled = !p || !!p.back;
-    $('date').value = p?.date ?? '';
-    if (document.activeElement !== $('comment')) $('comment').value = p?.comment ?? '';
+    $('zoom').disabled = $('date').disabled = $('comment').disabled = $('remove').disabled = !ill;
+    $('date').value = ill?.date ?? '';
+    if (document.activeElement !== $('comment')) $('comment').value = ill?.comment ?? '';
     $('height').value = data.height;
     $('split').classList.toggle('on', splitMode);
-    $('warn').textContent = Validate(data).join('\n');
+
+    const shown = new Set(assign.map.values());
+    const sel = $('ilist');
+    sel.innerHTML = '';
+    assign.sorted.forEach((it, i) => {
+        const o = document.createElement('option');
+        o.value = i;
+        o.textContent = `${it.date ?? '----------'} ${Name(it.img)}${shown.has(it) ? '' : '  ×'}`;
+        o.selected = it === ill;
+        sel.append(o);
+    });
+
+    const w = Validate(data);
+    const hidden = assign.sorted.length - assign.slots.length;
+    if (hidden > 0) w.push(`絵が${assign.sorted.length}枚、コマが${assign.slots.length}個: 古い${hidden}枚は表示されません`);
+    const nodate = list.filter(it => !it.date).length;
+    if (nodate) w.push(`作成日のない絵が${nodate}枚あります(いちばん後ろになります)`);
+    $('warn').textContent = w.join('\n');
 }
 
 // ---------------------------------------------------------------- 分割
@@ -301,7 +363,7 @@ function PickSplit(m) {
 }
 
 function DoSplit() {
-    const backup = JSON.stringify(data);
+    const backup = Snapshot();
     const p = panelOf(selected);
     const ids = picks.map(pk => pk.type === 'vertex' ? pk.idx : InsertOnEdge(pk.a, pk.b, pk.pos));
     const L = p.points, n = L.length;
@@ -313,9 +375,9 @@ function DoSplit() {
         return out;
     };
 
-    if (ia < 0 || ib < 0 || ia === ib) { data = JSON.parse(backup); alert('別の辺(または別の点)を選んでください'); return; }
+    if (ia < 0 || ib < 0 || ia === ib) { Restore(backup); alert('別の辺(または別の点)を選んでください'); return; }
     const A = Arc(ia, ib), B = Arc(ib, ia);
-    if (A.length < 3 || B.length < 3) { data = JSON.parse(backup); alert('別の辺(または別の点)を選んでください'); return; }
+    if (A.length < 3 || B.length < 3) { Restore(backup); alert('別の辺(または別の点)を選んでください'); return; }
 
     history.push(backup);
     p.points = A;
@@ -340,10 +402,12 @@ svg.addEventListener('pointerdown', (e) => {
     } else if (t.dataset.panel !== undefined) {
         const p = data.panels[+t.dataset.panel];
         const was = selected === p.id;
+        const ill = assign.map.get(p.id) ?? null;
         selected = p.id;
-        if (was && p.img && !p.back) {
+        selectedIllust = ill;
+        if (was && ill) {
             Push();
-            drag = { kind: 'focus', p, last: m };
+            drag = { kind: 'focus', p, ill, last: m };
             svg.setPointerCapture(e.pointerId);
         }
         Render();
@@ -358,11 +422,11 @@ svg.addEventListener('pointermove', (e) => {
         data.points[drag.idx] = [Clamp(Snap(m[0], e), 0, 1), Clamp(Snap(m[1], e), 0, data.height)];
     } else {
         // 画像を動かした向きと逆に、見せたい位置をずらす
-        const p = drag.p, im = GetImg(p.img);
+        const p = drag.p, ill = drag.ill, im = GetImg(ill.img);
         const box = Bounds(ShrinkPolygon(PanelPoints(data, p), gapValue()));
-        const fc = p.focus ?? [0.5, 0.5];
-        const f = FitImage(box, im.w, im.h, fc, p.zoom ?? 1);
-        p.focus = [Clamp(fc[0] - (m[0] - drag.last[0]) / f.w, 0, 1), Clamp(fc[1] - (m[1] - drag.last[1]) / f.h, 0, 1)];
+        const fc = ill.focus ?? [0.5, 0.5];
+        const f = FitImage(box, im.w, im.h, fc, ill.zoom ?? 1);
+        ill.focus = [Clamp(fc[0] - (m[0] - drag.last[0]) / f.w, 0, 1), Clamp(fc[1] - (m[1] - drag.last[1]) / f.h, 0, 1)];
         drag.last = m;
     }
     Render();
@@ -374,9 +438,10 @@ svg.addEventListener('wheel', (e) => {
     const t = e.target;
     if (t.dataset.panel === undefined) return;
     const p = data.panels[+t.dataset.panel];
-    if (p.id !== selected || !p.img) return;
+    const ill = assign.map.get(p.id);
+    if (p.id !== selected || !ill) return;
     e.preventDefault();
-    p.zoom = Math.max(1, +((p.zoom ?? 1) * (e.deltaY < 0 ? 1.05 : 1 / 1.05)).toFixed(3));
+    ill.zoom = Math.max(1, +((ill.zoom ?? 1) * (e.deltaY < 0 ? 1.05 : 1 / 1.05)).toFixed(3));
     Render();
 }, { passive: false });
 
@@ -393,14 +458,20 @@ $('split').onclick = () => {
     Render();
 };
 
-$('img').onchange = (e) => {
-    const f = e.target.files[0], p = selected && panelOf(selected);
-    if (!f || !p) return;
+// 画像を一覧に追加する(コマには、日付順で自動的に入る)
+$('add').onchange = (e) => {
     Push();
-    const path = `./img/illusts/${f.name}`;      // 画像は、このパスに置いておく
-    localUrls[path] = URL.createObjectURL(f);
-    delete imgCache[path];
-    p.img = path; p.focus = [0.5, 0.5]; p.zoom = 1; delete p.back;
+    let first = null;
+    for (const f of e.target.files) {
+        const path = `./img/illusts/${f.name}`;      // 画像は、このパスに置いておく
+        localUrls[path] = URL.createObjectURL(f);
+        delete imgCache[path];
+        if (list.some(it => it.img === path)) continue;
+        const it = { img: path, date: DateStr(new Date(f.lastModified)) };
+        list.push(it);
+        first = first ?? it;
+    }
+    if (first) selectedIllust = first;
     e.target.value = '';
     Render();
 };
@@ -413,19 +484,24 @@ $('imgs').onchange = (e) => {
     Render();
 };
 
-$('clearImg').onclick = () => {
-    const p = selected && panelOf(selected);
-    if (!p) return;
+$('ilist').onchange = () => {
+    selectedIllust = assign.sorted[+$('ilist').value] ?? null;
+    Render();
+};
+
+$('remove').onclick = () => {
+    if (!selectedIllust) return;
     Push();
-    delete p.img; delete p.focus; delete p.zoom;
+    list.splice(list.indexOf(selectedIllust), 1);
+    selectedIllust = null;
+    selected = null;
     Render();
 };
 
 $('date').onchange = () => {
-    const p = selected && panelOf(selected);
-    if (!p) return;
+    if (!selectedIllust) return;
     Push();
-    if ($('date').value) p.date = $('date').value; else delete p.date;
+    if ($('date').value) selectedIllust.date = $('date').value; else delete selectedIllust.date;
     Render();
 };
 
@@ -433,16 +509,14 @@ $('date').onchange = () => {
 let noteStarted = false;
 $('comment').onfocus = () => { noteStarted = false; };
 $('comment').oninput = () => {
-    const p = selected && panelOf(selected);
-    if (!p) return;
+    if (!selectedIllust) return;
     if (!noteStarted) { Push(); noteStarted = true; }
-    if ($('comment').value) p.comment = $('comment').value; else delete p.comment;
+    if ($('comment').value) selectedIllust.comment = $('comment').value; else delete selectedIllust.comment;
 };
 
 $('zoom').onchange = () => {
-    const p = selected && panelOf(selected);
-    if (!p) return;
-    p.zoom = Math.max(1, +$('zoom').value || 1);
+    if (!selectedIllust) return;
+    selectedIllust.zoom = Math.max(1, +$('zoom').value || 1);
     Render();
 };
 
@@ -451,7 +525,7 @@ $('back').onchange = (e) => {
     if (!p) return;
     Push();
     for (const q of data.panels) delete q.back;     // 戻るボタンは1つだけ
-    if (e.target.checked) p.back = true;
+    if (e.target.checked) { p.back = true; selectedIllust = null; }
     Render();
 };
 
@@ -467,26 +541,39 @@ $('gap').oninput = Render;
 $('showOrig').onchange = Render;
 
 // ---------------------------------------------------------------- 保存と読み込み
+const round = (v) => Math.round(v * 10000) / 10000;
+
+function Download(name, obj) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 4)], { type: 'application/json' }));
+    a.download = name;
+    a.click();
+}
+
+// コマ割り: 形と戻るボタンだけ。絵の情報は入れない
 $('save').onclick = () => {
-    const round = (v) => Math.round(v * 10000) / 10000;
-    const out = {
+    Download('illusts.json', {
         height: data.height,
         gap: gapValue(),
         points: data.points.map(q => q.map(round)),
         panels: data.panels.map(p => {
             const o = { id: p.id, points: p.points };
             if (p.back) o.back = true;
-            if (p.img) o.img = p.img;
-            if (p.date) o.date = p.date;
-            if (p.comment) o.comment = p.comment;
-            if (p.img) { o.focus = (p.focus ?? [0.5, 0.5]).map(round); o.zoom = p.zoom ?? 1; }
             return o;
         }),
-    };
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 4)], { type: 'application/json' }));
-    a.download = 'illusts.json';
-    a.click();
+    });
+};
+
+// 絵の一覧: 作成日の新しい順
+$('saveList').onclick = () => {
+    Download('illusts_list.json', assign.sorted.map(it => {
+        const o = { img: it.img };
+        if (it.date) o.date = it.date;
+        if (it.comment) o.comment = it.comment;
+        if (it.zoom && it.zoom !== 1) o.zoom = it.zoom;
+        if (it.focus && (it.focus[0] !== 0.5 || it.focus[1] !== 0.5)) o.focus = it.focus.map(round);
+        return o;
+    }));
 };
 
 $('load').onchange = async (e) => {
@@ -495,11 +582,27 @@ $('load').onchange = async (e) => {
     try {
         const loaded = JSON.parse(await f.text());
         if (!loaded.points || !loaded.panels) throw new Error('形式が違います');
+        for (const p of loaded.panels) for (const k of ['img', 'date', 'comment', 'focus', 'zoom']) delete p[k];   // 古い形式の絵の情報は捨てる
         data = loaded;
         data.height = data.height ?? 3;
         if (data.gap !== undefined) $('gap').value = data.gap;
         delete data.gap;
-        selected = null; splitMode = false; picks = []; history = [];
+        selected = null; selectedIllust = null; splitMode = false; picks = []; history = [];
+        Render();
+    } catch (err) {
+        alert('読み込み失敗: ' + err.message);
+    }
+    e.target.value = '';
+};
+
+$('loadList').onchange = async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try {
+        const loaded = JSON.parse(await f.text());
+        if (!Array.isArray(loaded)) throw new Error('形式が違います(配列ではありません)');
+        list = loaded;
+        selected = null; selectedIllust = null; history = [];
         Render();
     } catch (err) {
         alert('読み込み失敗: ' + err.message);
@@ -511,3 +614,4 @@ Render();
 </script>
 </body>
 </html>
+
