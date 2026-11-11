@@ -25,6 +25,41 @@ body
 }
 
 
+/* 周辺ボケ */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+
+    mask-image: radial-gradient(
+        ellipse,
+        transparent 65%,
+        rgba(0, 0, 0, 0.7) 100%
+    );
+}
+
+/* 周辺光量落ち */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+
+    background: radial-gradient(
+        ellipse,
+        transparent 60%,
+        rgba(0, 0, 0, 0.10) 100%
+    );
+}
+
+
+
 
 /* ----------------------------------------------------------------------------
 シーンの初期設定
